@@ -7,11 +7,13 @@ from aiogram.dispatcher.middlewares import BaseMiddleware
 from loguru import logger
 
 
+
 class AiogramHandlerPack:
     @staticmethod
     def register(dp: Dispatcher) -> typing.Any:
         raise NotImplemented("Static method register need to be implemented")
 
+AiogramHandlerPackType = typing.TypeVar('AiogramHandlerPackType', bound=AiogramHandlerPack)
 
 class WhenToCall(enum.IntEnum):
     BEFORE_MIDDLEWARES = AT_START = 1
@@ -21,7 +23,7 @@ class WhenToCall(enum.IntEnum):
 
 class AiogramPlugin:
     middlewares: typing.List[BaseMiddleware]
-    handlers: typing.List[AiogramHandlerPack]
+    handlers: typing.List[typing.Type[AiogramHandlerPack]]
     custom_methods_at_start: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[
         None], typing.Awaitable], typing.Callable]]]
     custom_methods_before_handlers: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[
@@ -99,7 +101,7 @@ class AiogramPlugin:
             f'Plugged {middleware.__name__} middleware to {self.name} plugin')
         return self
 
-    def plug_handler(self, handler_pack: AiogramHandlerPack,) -> 'AiogramPlugin':
+    def plug_handler(self, handler_pack: typing.Type[AiogramHandlerPack],) -> 'AiogramPlugin':
         self.handlers.append(handler_pack)
         logger.debug(
             f'Plugged {handler_pack.__name__} handlers to {self.name} plugin')
