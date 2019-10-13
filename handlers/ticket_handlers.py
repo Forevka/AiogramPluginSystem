@@ -4,18 +4,12 @@ import typing
 
 from loguru import logger
 
-import logging
-
 from aiogram import Bot, Dispatcher, types
 
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
-
-class AiogramHandlerPack:
-    @staticmethod
-    def register(dp: Dispatcher) -> typing.Any:
-        raise NotImplemented("Static method register need to be implemented")
+from aiogram_plugins import AiogramHandlerPack
 
 # States
 class TicketForm(StatesGroup):
