@@ -9,7 +9,7 @@ from models.conversation import Conversation
 from aiogram.utils.mixins import ContextInstanceMixin
 
 
-class DBworker(ContextInstanceMixin):
+class TicketDBworker(ContextInstanceMixin):
     conn: asyncpg.Connection
 
     def __init__(self, password: str, host: str, user: str = 'postgres', database: str = 'ticket_system',):
@@ -23,16 +23,16 @@ class DBworker(ContextInstanceMixin):
         self.conn = await asyncpg.connect(user=self.user, password=self.password,
                                  database=self.database, host=self.host)
     
-    async def add_conversation(self, text: str, ticket_id: typing.Union[str, uuid.UUID], from_user_id: int, from_support: bool) -> uuid.UUID:
-        sql_query = ("""INSERT INTO conversation (text, ticket_id, from_user_id, from_support) 
-                        VALUES($1, $2, $3, $4)
-                        RETURNING conversation_id""", text, str(ticket_id), from_user_id, from_support)
+    async def add_conversation(self, text: str, ticket_id: typing.Union[str, uuid.UUID], from_user_id: int, from_support: bool, message_id: typing.Optional[int], reply_message_id: typing.Optional[int]) -> uuid.UUID:
+        sql_query = ("""INSERT INTO conversation (text, ticket_id, from_user_id, from_support, message_id, reply_message_id) 
+                        VALUES($1, $2, $3, $4, $5, $6)
+                        RETURNING conversation_id""", text, str(ticket_id), from_user_id, from_support, message_id, reply_message_id)
         conv_id = await self.conn.fetchval(*sql_query)
         logger.debug(conv_id)
         return conv_id
 
     async def find_conversations(self, ticket_id: typing.Union[str, uuid.UUID]) -> typing.List[Conversation]:
-        sql_query = ("SELECT * FROM conversation WHERE ticket_id = $1 ORDER BY created_at", str(ticket_id))
+        sql_query = ("SELECT * FROM conversation WHERE ticket_id = $1 ORDER BY created_at DESC", str(ticket_id))
         convers = await self.conn.fetch(*sql_query)
         return [Conversation(**i) for i in convers]
 
@@ -40,6 +40,15 @@ class DBworker(ContextInstanceMixin):
         sql_query = ("UPDATE tickets SET status = $1 WHERE ticket_id = $2", new_status.value, str(ticket_id))
         ticket_id = await self.conn.fetchval(*sql_query)
         return True
+
+    async def find_ticket_by_message_reply_id(self, user_id: int, reply_id: int) -> typing.Optional[Ticket]:
+        sql_query = ("""SELECT t2.*
+                        FROM conversation as t1
+                        INNER JOIN tickets as t2 on t2.user_id = $1 and t1.reply_message_id = $2""", user_id, reply_id)
+        raw_ticket = await self.conn.fetchrow(*sql_query)
+        if raw_ticket:
+            return Ticket(**raw_ticket)
+
 
     async def find_tickets(self, page = 1, per_page = 5) -> typing.Tuple[bool, typing.List[Ticket]]:
         sql_query = ("SELECT * FROM tickets ORDER BY created_at DESC LIMIT $1 OFFSET $2", per_page + 1, (page-1) * per_page)
@@ -55,18 +64,18 @@ class DBworker(ContextInstanceMixin):
         return ticket
         
     async def create_ticket(self, user_id: int, ticket_text: str, user_message_id: int) -> uuid.UUID:
-        sql_query = ("""INSERT INTO tickets (user_id, user_message_id) 
-                        VALUES($1, $2)
-                        RETURNING ticket_id""", user_id, user_message_id)
+        sql_query = ("""INSERT INTO tickets (user_id) 
+                        VALUES($1)
+                        RETURNING ticket_id""", user_id)
         ticket_id = await self.conn.fetchval(*sql_query)
         logger.debug(ticket_id)
-        await self.add_conversation(ticket_text, ticket_id, user_id, False)
+        await self.add_conversation(ticket_text, ticket_id, user_id, False, user_message_id, None)
         return ticket_id
 
 
 
 
-async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'ticket_system') -> DBworker:
-    db: DBworker = DBworker(password, host, user, database)
+async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'ticket_system') -> TicketDBworker:
+    db: TicketDBworker = TicketDBworker(password, host, user, database)
     await db.connect()
     return db
