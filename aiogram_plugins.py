@@ -32,8 +32,6 @@ class AiogramHandlerPack(DataMixin):
     def register(dp: Dispatcher, config: typing.Dict[typing.Any, typing.Any]) -> typing.Any:
         raise NotImplemented("Static method register need to be implemented")
 
-AiogramHandlerPackType = typing.TypeVar('AiogramHandlerPackType', bound=AiogramHandlerPack)
-
 class WhenToCall(enum.IntEnum):
     BEFORE_MIDDLEWARES = AT_START = 1
     BEFORE_HANDLERS = AFTER_MIDDLEWARES = 2

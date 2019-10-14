@@ -4,7 +4,8 @@ import asyncpg
 import uuid
 from loguru import logger
 
-from models.ticket import Ticket
+from models.ticket import Ticket, TicketStatus
+from models.conversation import Conversation
 from aiogram.utils.mixins import ContextInstanceMixin
 
 
@@ -18,23 +19,48 @@ class DBworker(ContextInstanceMixin):
         self.host: str = host
         #
     
-    async def connect(self):
+    async def connect(self) -> None:
         self.conn = await asyncpg.connect(user=self.user, password=self.password,
                                  database=self.database, host=self.host)
     
+    async def add_conversation(self, text: str, ticket_id: typing.Union[str, uuid.UUID], from_user_id: int, from_support: bool) -> uuid.UUID:
+        sql_query = ("""INSERT INTO conversation (text, ticket_id, from_user_id, from_support) 
+                        VALUES($1, $2, $3, $4)
+                        RETURNING conversation_id""", text, str(ticket_id), from_user_id, from_support)
+        conv_id = await self.conn.fetchval(*sql_query)
+        logger.debug(conv_id)
+        return conv_id
+
+    async def find_conversations(self, ticket_id: typing.Union[str, uuid.UUID]) -> typing.List[Conversation]:
+        sql_query = ("SELECT * FROM conversation WHERE ticket_id = $1 ORDER BY created_at", str(ticket_id))
+        convers = await self.conn.fetch(*sql_query)
+        return [Conversation(**i) for i in convers]
+
+    async def update_ticket_status(self, ticket_id: typing.Union[str, uuid.UUID], new_status: TicketStatus) -> bool:
+        sql_query = ("UPDATE tickets SET status = $1 WHERE ticket_id = $2", new_status.value, str(ticket_id))
+        ticket_id = await self.conn.fetchval(*sql_query)
+        return True
+
+    async def find_tickets(self, page = 1, per_page = 5) -> typing.Tuple[bool, typing.List[Ticket]]:
+        sql_query = ("SELECT * FROM tickets ORDER BY created_at DESC LIMIT $1 OFFSET $2", per_page + 1, (page-1) * per_page)
+        tickets = await self.conn.fetch(*sql_query)
+        return (len(tickets) == (per_page + 1), [Ticket(**i) for i in tickets[:per_page]])
 
     async def find_ticket(self, ticket_id: typing.Union[str, uuid.UUID]) -> Ticket:
         sql_query = ("SELECT * FROM tickets WHERE ticket_id = $1", str(ticket_id))
-        ticket = await self.conn.fetchrow(*sql_query)
-        logger.debug(ticket)
-        return Ticket(**ticket)
+        raw_ticket = await self.conn.fetchrow(*sql_query)
+        ticket = Ticket(**raw_ticket)
+        logger.debug(raw_ticket)
+        ticket.conversations.extend(await self.find_conversations(ticket.ticket_id))
+        return ticket
         
-    async def create_ticket(self, user_id: int, ticket_text) -> uuid.UUID:
-        sql_query = ("""INSERT INTO tickets (user_id, text) 
-                        VALUES($1, $2)
-                        RETURNING ticket_id""", user_id, ticket_text)
+    async def create_ticket(self, user_id: int, ticket_text: str, user_message_id: int) -> uuid.UUID:
+        sql_query = ("""INSERT INTO tickets (user_id, text, user_message_id) 
+                        VALUES($1, $2, $3)
+                        RETURNING ticket_id""", user_id, '', user_message_id)
         ticket_id = await self.conn.fetchval(*sql_query)
         logger.debug(ticket_id)
+        await self.add_conversation(ticket_text, ticket_id, user_id, False)
         return ticket_id
 
 
