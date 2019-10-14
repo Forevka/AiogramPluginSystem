@@ -41,9 +41,10 @@ class WhenToCall(enum.IntEnum):
 
 
 class AiogramPlugin:
+    plugins: typing.List[str] = []
     config: typing.Dict[typing.Any, typing.Any]
     middlewares: typing.List[BaseMiddleware]
-    handlers: typing.List[typing.Type[AiogramHandlerPack]] #[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]
+    handlers: typing.List[typing.Type[AiogramHandlerPack]]
     custom_methods_at_start: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
     custom_methods_before_handlers: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
     custom_methods_after_all: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
@@ -58,6 +59,10 @@ class AiogramPlugin:
         self.custom_methods_before_handlers = []
         self.custom_methods_after_all = []
 
+        if self.name in AiogramPlugin.plugins:
+            raise AttributeError(f'Plugin {self.name} already exists')
+
+        AiogramPlugin.plugins.append(self.name)
         ConfigForPluginMiddleware.pluginConfigs.update({convert_to_cnake_case(self.name) + "_config": self.config})
 
         logger.debug(f'Initialised {self.name} plugin')
