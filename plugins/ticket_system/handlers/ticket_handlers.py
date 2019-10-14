@@ -9,10 +9,10 @@ from loguru import logger
 
 from aiogram_plugins import AiogramHandlerPack
 import config
-from controllers.db_controller import TicketDBworker
-from filters.IsReplyToBot import IsReplyToBot
-from models.ticket import Ticket
-from models.ticket import TicketStatus
+from ..controllers.db_controller import TicketDBworker
+from ..filters.IsReplyToBot import IsReplyToBot
+from ..models.ticket import Ticket
+from ..models.ticket import TicketStatus
 
 
 

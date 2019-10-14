@@ -5,5 +5,6 @@ config = {
         'database': '',
         'host': ''
     },
-    'GROUP_LINK': '@bottest_forevka'
+    'GROUP_LINK': '',
+    'ticket_per_page': 5
 }

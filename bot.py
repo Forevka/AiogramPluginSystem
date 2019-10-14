@@ -7,7 +7,9 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from loguru import logger
 from aiogram_plugins import monkey_patch; monkey_patch(Dispatcher)
 
-from plugins.ticket_system_plugin import ticket_plugin
+from middlewares.BotContextMiddleware import BotContextMiddleware
+
+from plugins.ticket_system.ticket_system_plugin import ticket_plugin
 
 from config import config
 
@@ -22,6 +24,7 @@ if __name__ == '__main__':
     bot = Bot(token=API_TOKEN)
     storage = MemoryStorage()
     dp = Dispatcher(bot, storage=storage)
+    dp.middleware.setup(BotContextMiddleware(dp))
 
     loop.run_until_complete(dp.register_plugin(ticket_plugin))
 
