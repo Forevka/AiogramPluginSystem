@@ -103,28 +103,29 @@ class TicketHandlers(AiogramHandlerPack):
     async def query_change_status_new_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot):
         await ticket_db_worker.update_ticket_status(callback_data['id'], TicketStatus(int(callback_data['new_status'])))
         ticket = await ticket_db_worker.find_ticket(callback_data['id'])
+        if ticket:
+            kb_action = generate_ticket_kb(ticket)
 
-        kb_action = generate_ticket_kb(ticket)
-
-        await query.message.edit_text(ticket_desccription(ticket, additional_text='<b>Status changed.</b>',), reply_markup=kb_action, parse_mode='HTML')
+            await query.message.edit_text(ticket_desccription(ticket, additional_text='<b>Status changed.</b>',), reply_markup=kb_action, parse_mode='HTML')
 
     @staticmethod
     async def query_change_status_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot):
         ticket = await ticket_db_worker.find_ticket(callback_data['id'])
-        kb_statuses = types.InlineKeyboardMarkup()
-        for s in TicketStatus:
-            if s.value != ticket.status.value:
-                kb_statuses.add(
-                    types.InlineKeyboardButton(
-                        "Status: " + s.name.lower().title().replace('_', ' '), callback_data=change_status_cb.new(id=str(ticket.ticket_id), new_status=str(s.value))),
-                )
+        if ticket:
+            kb_statuses = types.InlineKeyboardMarkup()
+            for s in TicketStatus:
+                if s.value != ticket.status.value:
+                    kb_statuses.add(
+                        types.InlineKeyboardButton(
+                            "Status: " + s.name.lower().title().replace('_', ' '), callback_data=change_status_cb.new(id=str(ticket.ticket_id), new_status=str(s.value))),
+                    )
 
-        kb_statuses.add(
-            types.InlineKeyboardButton(
-                "⬅️ Back", callback_data=ticket_cb.new(id=ticket.ticket_id, action='show')),
-        )
-
-        await query.message.edit_text(ticket_desccription(ticket, additional_text='<b>Choose new status for</b>',), reply_markup=kb_statuses, parse_mode='HTML')
+            kb_statuses.add(
+                types.InlineKeyboardButton(
+                    "⬅️ Back", callback_data=ticket_cb.new(id=ticket.ticket_id, action='show')),
+            )
+        
+            await query.message.edit_text(ticket_desccription(ticket, additional_text='<b>Choose new status for</b>',), reply_markup=kb_statuses, parse_mode='HTML')
 
     @staticmethod
     async def process_question_reply(message: types.Message, state: FSMContext, ticket_db_worker: TicketDBworker, bot: Bot, ticket_support_config: typing.Dict):
@@ -134,11 +135,11 @@ class TicketHandlers(AiogramHandlerPack):
             await ticket_db_worker.update_ticket_status(data['ticket_id'], TicketStatus.ON_REVIEW)
             await ticket_db_worker.add_conversation(message.text, data['ticket_id'], message.from_user.id, True, message.message_id, reply_to_user_msg.message_id)
             ticket = await ticket_db_worker.find_ticket(str(data['ticket_id']))
+        if ticket:
+            kb_action = generate_ticket_kb(ticket)
 
-        kb_action = generate_ticket_kb(ticket)
-
-        await message.answer(ticket_desccription(ticket, additional_text='<b>Answered and changed status to On review</b>',), reply_markup=kb_action, parse_mode='HTML')
-        await state.finish()
+            await message.answer(ticket_desccription(ticket, additional_text='<b>Answered and changed status to On review</b>',), reply_markup=kb_action, parse_mode='HTML')
+            await state.finish()
 
     @staticmethod
     async def process_new_ticket_reply(message: types.Message, state: FSMContext, ticket_db_worker: TicketDBworker, bot: Bot, ticket_support_config: typing.Dict):
@@ -175,9 +176,10 @@ class TicketHandlers(AiogramHandlerPack):
     @staticmethod
     async def query_show_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot):
         ticket = await ticket_db_worker.find_ticket(callback_data['id'])
-        kb_action = generate_ticket_kb(ticket)
+        if ticket:
+            kb_action = generate_ticket_kb(ticket)
 
-        await query.message.edit_text(ticket_desccription(ticket), reply_markup=kb_action, parse_mode='HTML')
+            await query.message.edit_text(ticket_desccription(ticket), reply_markup=kb_action, parse_mode='HTML')
 
     @staticmethod
     async def query_show_ticket_conversation(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot, state: FSMContext):

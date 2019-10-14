@@ -19,9 +19,20 @@ class TicketDBworker(ContextInstanceMixin):
         self.host: str = host
         #
 
-    async def connect(self) -> None:
+    async def connect(self, migrate: bool = False) -> None:
         self.conn = await asyncpg.connect(user=self.user, password=self.password,
                                           database=self.database, host=self.host)
+        
+        if migrate:
+            sql_create_tickets_table = open('plugins/ticket_system/migrations/tickets.sql', 'r').read()
+            sql_create_conversations_table = open('plugins/ticket_system/migrations/conversation.sql', 'r').read()
+            try:
+                res = await self.conn.execute(sql_create_tickets_table)
+                logger.debug('Migrated tickets table with ' + str(res))
+                await self.conn.execute(sql_create_conversations_table)
+                logger.debug('Migrated conversation table with ' + str(res))
+            except Exception as e:
+                logger.error(e)
 
     async def add_conversation(self, text: str, ticket_id: typing.Union[str, uuid.UUID], from_user_id: int, from_support: bool, message_id: typing.Optional[int], reply_message_id: typing.Optional[int]) -> uuid.UUID:
         sql_query = ("""INSERT INTO conversation (text, ticket_id, from_user_id, from_support, message_id, reply_message_id) 
@@ -57,14 +68,15 @@ class TicketDBworker(ContextInstanceMixin):
         tickets = await self.conn.fetch(*sql_query)
         return (len(tickets) == (per_page + 1), [Ticket(**i) for i in tickets[:per_page]])
 
-    async def find_ticket(self, ticket_id: typing.Union[str, uuid.UUID]) -> Ticket:
+    async def find_ticket(self, ticket_id: typing.Union[str, uuid.UUID]) -> typing.Optional[Ticket]:
         sql_query = ("SELECT * FROM tickets WHERE ticket_id = $1",
                      str(ticket_id))
         raw_ticket = await self.conn.fetchrow(*sql_query)
-        ticket = Ticket(**raw_ticket)
         logger.debug(raw_ticket)
-        ticket.conversations.extend(await self.find_conversations(ticket.ticket_id))
-        return ticket
+        if raw_ticket:
+            ticket = Ticket(**raw_ticket)
+            ticket.conversations.extend(await self.find_conversations(ticket.ticket_id))
+            return ticket
 
     async def create_ticket(self, user_id: int, ticket_text: str, user_message_id: int) -> uuid.UUID:
         sql_query = ("""INSERT INTO tickets (user_id) 
@@ -76,7 +88,7 @@ class TicketDBworker(ContextInstanceMixin):
         return ticket_id
 
 
-async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'ticket_system') -> TicketDBworker:
+async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'ticket_system', migrate: bool = False) -> TicketDBworker:
     db: TicketDBworker = TicketDBworker(password, host, user, database)
-    await db.connect()
+    await db.connect(migrate = migrate)
     return db
