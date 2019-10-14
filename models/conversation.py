@@ -3,8 +3,8 @@ import datetime
 import enum
 
 class Conversation:
-    def __init__(self, conversation_id: uuid.UUID, ticket_id: uuid.UUID, text: str, from_user_id: int, from_support: bool, created_at: datetime.datetime):
-        self.conversation_id: uuid.UUID = conversation_id
+    def __init__(self, conversation_id: int, ticket_id: uuid.UUID, text: str, from_user_id: int, from_support: bool, created_at: datetime.datetime):
+        self.conversation_id: int = conversation_id
         self.ticket_id: uuid.UUID = ticket_id
         self.text: str = text
         self.from_user_id: int = from_user_id

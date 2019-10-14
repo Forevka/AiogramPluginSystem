@@ -55,9 +55,9 @@ class DBworker(ContextInstanceMixin):
         return ticket
         
     async def create_ticket(self, user_id: int, ticket_text: str, user_message_id: int) -> uuid.UUID:
-        sql_query = ("""INSERT INTO tickets (user_id, text, user_message_id) 
-                        VALUES($1, $2, $3)
-                        RETURNING ticket_id""", user_id, '', user_message_id)
+        sql_query = ("""INSERT INTO tickets (user_id, user_message_id) 
+                        VALUES($1, $2)
+                        RETURNING ticket_id""", user_id, user_message_id)
         ticket_id = await self.conn.fetchval(*sql_query)
         logger.debug(ticket_id)
         await self.add_conversation(ticket_text, ticket_id, user_id, False)

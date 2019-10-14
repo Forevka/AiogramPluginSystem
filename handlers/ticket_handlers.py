@@ -26,6 +26,7 @@ class TicketForm(StatesGroup):
 
 
 ticket_cb = CallbackData('ticket', 'id', 'action')
+conversation_cb = CallbackData('conversation', 'ticket_id', 'action', 'conv_id')
 change_status_cb = CallbackData('ticket_status', 'id', 'new_status')
 
 
@@ -34,8 +35,10 @@ class TicketHandlers(AiogramHandlerPack):
     def register(dp: Dispatcher, config: typing.Dict[typing.Any, typing.Any]) -> bool:
         dp.register_message_handler(
             TicketHandlers.create_ticket, commands=['ticket'])
+
         dp.register_message_handler(
             TicketHandlers.process_question_text, state=TicketForm.get_text)
+
         dp.register_message_handler(
             TicketHandlers.process_question_reply, state=TicketForm.get_reply)
 
@@ -56,6 +59,9 @@ class TicketHandlers(AiogramHandlerPack):
 
         dp.register_callback_query_handler(
             TicketHandlers.query_change_status_ticket, ticket_cb.filter(action='change_status'))
+
+        dp.register_callback_query_handler(
+            TicketHandlers.query_show_ticket_conversation, conversation_cb.filter())
 
         dp.register_callback_query_handler(
             TicketHandlers.query_change_status_new_ticket, change_status_cb.filter())
@@ -168,8 +174,20 @@ class TicketHandlers(AiogramHandlerPack):
             types.InlineKeyboardButton(
                 "Change status", callback_data=ticket_cb.new(id=str(ticket.ticket_id), action='change_status')),
         )
+        kb_action.row(
+            types.InlineKeyboardButton(
+                "See all conversations 📃", callback_data=conversation_cb.new(ticket_id=str(ticket.ticket_id), action='show', conv_id=ticket.conversations[-1].conversation_id)),
+        )
 
         await query.message.edit_text('Ticket id {}\n\nFrom <a href="tg://user?id={}">User</a>\nLast conversation: {}\n\nCreated at: {}\nStatus: {}'.format(ticket.ticket_id, ticket.user_id, ticket.conversations[-1].text, ticket.created_at.strftime("%m/%d/%Y, %H:%M:%S"), str(ticket.status.name.lower().title().replace('_', ' '))), reply_markup=kb_action, parse_mode='HTML')
+
+
+    @staticmethod
+    async def query_show_ticket_conversation(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: DBworker, ticket_support_config: typing.Dict, bot: Bot, state: FSMContext):
+        ticket = ticket_db_worker.find_ticket(callback_data['ticket_id'])
+        this_conversation = callback_data['conv_id']
+
+
 
     @staticmethod
     async def query_reply_to_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: DBworker, ticket_support_config: typing.Dict, bot: Bot, state: FSMContext):
