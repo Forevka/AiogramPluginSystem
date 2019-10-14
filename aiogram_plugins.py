@@ -44,9 +44,9 @@ class AiogramPlugin:
     config: typing.Dict[typing.Any, typing.Any]
     middlewares: typing.List[BaseMiddleware]
     handlers: typing.List[typing.Type[AiogramHandlerPack]] #[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]
-    custom_methods_at_start: typing.List[typing.Tuple[int, typing.Union[typing.Callable, typing.Awaitable]]]
-    custom_methods_before_handlers: typing.List[typing.Tuple[int, typing.Union[typing.Callable, typing.Awaitable]]]
-    custom_methods_after_all: typing.List[typing.Tuple[int, typing.Union[typing.Callable, typing.Awaitable]]]
+    custom_methods_at_start: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
+    custom_methods_before_handlers: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
+    custom_methods_after_all: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
 
     def __init__(self, name: str, config: typing.Dict[typing.Any, typing.Any] = {}):
         self.name: str = name
