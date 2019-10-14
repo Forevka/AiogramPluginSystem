@@ -1,11 +1,7 @@
-import logging
-import time
 import typing
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher.middlewares import BaseMiddleware
-
-from controllers.db_controller import DBworker
 
 
 class AddTicketDBMiddleware(BaseMiddleware):
@@ -13,5 +9,11 @@ class AddTicketDBMiddleware(BaseMiddleware):
         self.dp: Dispatcher = dp
         super(AddTicketDBMiddleware, self).__init__()
 
-    async def on_pre_process_message(self, message: types.Message, data: dict):
-        data['ticket_db_worker'] = self.dp['ticket_db_worker']
+    def db_data(self) -> typing.Dict[typing.Any, typing.Any]:
+        return {'ticket_db_worker': self.dp['ticket_db_worker']}
+
+    async def on_pre_process_message(self, message: types.Message, data: typing.Dict[typing.Any, typing.Any]):
+        data.update(self.db_data())
+    
+    async def on_pre_process_callback_query(self, callback_query: types.CallbackQuery, data: typing.Dict[typing.Any, typing.Any]):
+        data.update(self.db_data())

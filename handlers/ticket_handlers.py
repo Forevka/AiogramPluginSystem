@@ -1,5 +1,6 @@
 from aiogram import Bot, Dispatcher, executor, types
 from controllers.db_controller import DBworker
+import config
 import typing
 
 from loguru import logger
@@ -18,7 +19,7 @@ class TicketForm(StatesGroup):
 
 class TicketHandlers(AiogramHandlerPack):
     @staticmethod
-    def register(dp: Dispatcher) -> bool:
+    def register(dp: Dispatcher, config: typing.Dict[typing.Any, typing.Any]) -> bool:
         dp.register_message_handler(
             TicketHandlers.create_ticket, commands=['ticket'])
         dp.register_message_handler(
@@ -34,10 +35,11 @@ class TicketHandlers(AiogramHandlerPack):
         await message.answer("Please type you question")
 
     @staticmethod
-    async def process_question_text(message: types.Message, state: FSMContext, ticket_db_worker: DBworker):
+    async def process_question_text(message: types.Message, state: FSMContext, ticket_db_worker: DBworker, bot: Bot, ticket_support_config: typing.Dict):
         await ticket_db_worker.create_ticket(message.from_user.id, message.text)
-
+        logger.info(ticket_support_config)
         await state.finish()
+        await bot.send_message(ticket_support_config['GROUP_LINK'], message.text)
         await message.reply("Ok I will send this question to support!\nWait for answer, i notify. Thank you")
 
     @staticmethod

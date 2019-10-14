@@ -9,11 +9,11 @@ from aiogram_plugins import monkey_patch; monkey_patch(Dispatcher)
 
 from plugins.ticket_system_plugin import ticket_plugin
 
-import config
+from config import config
 
 
 if __name__ == '__main__':
-    API_TOKEN = config.BOT_TEST_TOKEN
+    API_TOKEN = config['BOT_TEST_TOKEN']
 
     loop = asyncio.get_event_loop()
 

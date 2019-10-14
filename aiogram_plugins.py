@@ -1,16 +1,35 @@
 import enum
 from inspect import iscoroutinefunction, isfunction
+import re
 import typing
 
-from aiogram import Dispatcher
+from aiogram import Dispatcher, types
 from aiogram.dispatcher.middlewares import BaseMiddleware
+from aiogram.utils.mixins import DataMixin
 from loguru import logger
 
+def convert_to_cnake_case(name):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
+class ConfigForPluginMiddleware(BaseMiddleware):
+    pluginConfigs: typing.Dict[str, typing.Dict[typing.Any, typing.Any]] = {}
 
-class AiogramHandlerPack:
+    def __init__(self):
+        super(ConfigForPluginMiddleware, self).__init__()
+
+    def get_config_data(self) -> typing.Dict[typing.Any, typing.Any]:
+        return {config_name: cfg for config_name, cfg in ConfigForPluginMiddleware.pluginConfigs.items()}
+
+    async def on_pre_process_message(self, message: types.Message, data: typing.Dict[typing.Any, typing.Any]):
+        data.update(self.get_config_data())
+    
+    async def on_pre_process_callback_query(self, callback_query: types.CallbackQuery, data: typing.Dict[typing.Any, typing.Any]):
+        data.update(self.get_config_data())
+
+class AiogramHandlerPack(DataMixin):
     @staticmethod
-    def register(dp: Dispatcher) -> typing.Any:
+    def register(dp: Dispatcher, config: typing.Dict[typing.Any, typing.Any]) -> typing.Any:
         raise NotImplemented("Static method register need to be implemented")
 
 AiogramHandlerPackType = typing.TypeVar('AiogramHandlerPackType', bound=AiogramHandlerPack)
@@ -22,17 +41,16 @@ class WhenToCall(enum.IntEnum):
 
 
 class AiogramPlugin:
+    config: typing.Dict[typing.Any, typing.Any]
     middlewares: typing.List[BaseMiddleware]
     handlers: typing.List[typing.Type[AiogramHandlerPack]]
-    custom_methods_at_start: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[
-        None], typing.Awaitable], typing.Callable]]]
-    custom_methods_before_handlers: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[
-        None], typing.Awaitable], typing.Callable]]]
-    custom_methods_after_all: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[
-        None], typing.Awaitable], typing.Callable]]]
+    custom_methods_at_start: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any], typing.Awaitable], typing.Callable]]]
+    custom_methods_before_handlers: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any], typing.Awaitable], typing.Callable]]]
+    custom_methods_after_all: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any], typing.Awaitable], typing.Callable]]]
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, config: typing.Dict[typing.Any, typing.Any] = {}):
         self.name: str = name
+        self.config = config
         self.middlewares = []
         self.handlers = []
 
@@ -40,16 +58,23 @@ class AiogramPlugin:
         self.custom_methods_before_handlers = []
         self.custom_methods_after_all = []
 
+        ConfigForPluginMiddleware.pluginConfigs.update({convert_to_cnake_case(self.name) + "_config": self.config})
+
         logger.debug(f'Initialised {self.name} plugin')
 
     async def plug(self, dp: Dispatcher):
+        if ConfigForPluginMiddleware not in dp.middleware.applications:
+            logger.debug(
+                f'Config middleware not setuped, setuping')
+            dp.middleware.setup(ConfigForPluginMiddleware())
+
         logger.debug(
             f'Start launching custom methods AT START by plugin {self.name}')
         for iscoro, method in self.custom_methods_at_start:
             if iscoro:
-                await method(dp)
+                await method(dp, self.config)
             else:
-                method(dp)
+                method(dp, self.config)
         logger.debug(
             f'Successfully launched custom methods AT START by plugin {self.name}')
 
@@ -67,9 +92,9 @@ class AiogramPlugin:
             f'Start launching custom methods AT MIDDLE by plugin {self.name}')
         for iscoro, method in self.custom_methods_before_handlers:
             if iscoro:
-                await method(dp)
+                await method(dp, self.config)
             else:
-                method(dp)
+                method(dp, self.config)
         logger.debug(
             f'Successfully launched custom methods AT MIDDLE by plugin {self.name}')
 
@@ -79,7 +104,7 @@ class AiogramPlugin:
         for handler_pack in self.handlers:
             logger.debug(
                 f'Registering {handler_pack.__name__} by plugin {self.name}')
-            handler_pack.register(dp)
+            handler_pack.register(dp, self.config)
             logger.debug(
                 f'Registered {handler_pack.__name__} by plugin {self.name}')
 
@@ -89,9 +114,9 @@ class AiogramPlugin:
             f'Start launching custom methods AT END by plugin {self.name}')
         for iscoro, method in self.custom_methods_after_all:
             if iscoro:
-                await method(dp)
+                await method(dp, self.config)
             else:
-                method(dp)
+                method(dp, self.config)
         logger.debug(
             f'Successfully launched custom methods AT END by plugin {self.name}')
 
