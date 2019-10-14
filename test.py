@@ -1,10 +1,10 @@
 import asyncio
-from config import db_ticket_settings
-from controllers.db_controller import create_db
+from plugins.ticket_system.ticket_system_config import config
+from plugins.ticket_system.controllers.db_controller import create_db
 
 async def main():
-    db = await create_db(**db_ticket_settings)
-    t = await db.find_ticket("d82821cb-f17a-41f6-bb64-78a8f5b4538d")
+    db = await create_db(**config['db_ticket_settings'])
+    t = await db.find_ticket('d1e5aa07-18f3-48e4-9392-0fe82469624d')
     print(t)
 
 if __name__ == "__main__":
