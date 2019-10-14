@@ -132,7 +132,7 @@ class AiogramPlugin:
             f'Plugged {handler_pack.__name__} handlers to {self.name} plugin')
         return self
 
-    def plug_custom_method(self, method: typing.Union[typing.Callable[[None], typing.Awaitable], typing.Callable], when_to_call: WhenToCall = WhenToCall.AFTER_ALL):
+    def plug_custom_method(self, method: typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]], when_to_call: WhenToCall = WhenToCall.AFTER_ALL):
         if isfunction(method):
             if when_to_call == WhenToCall.AT_START or when_to_call == WhenToCall.BEFORE_MIDDLEWARES:
                 self.custom_methods_at_start.append(
