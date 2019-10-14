@@ -44,12 +44,3 @@ async def create_db(password: str, host: str, user: str = 'postgres', database: 
     db: DBworker = DBworker(password, host, user, database)
     await db.connect()
     return db
-
-
-'''
-async def run():
-    conn = await asyncpg.connect(user='postgres', password='werdwerd',
-                                    database='ticket_system', host='194.67.198.163')
-    print(values)
-    await conn.close()
-'''
