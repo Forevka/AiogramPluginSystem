@@ -24,8 +24,8 @@ class DBworker(ContextInstanceMixin):
     
 
     async def find_ticket(self, ticket_id: typing.Union[str, uuid.UUID]) -> Ticket:
-        sql_query = "SELECT * FROM tickets WHERE ticket_id = '{}'".format(str(ticket_id))
-        ticket = await self.conn.fetchrow(sql_query)
+        sql_query = ("SELECT * FROM tickets WHERE ticket_id = $1", str(ticket_id))
+        ticket = await self.conn.fetchrow(*sql_query)
         logger.debug(ticket)
         return Ticket(**ticket)
         
