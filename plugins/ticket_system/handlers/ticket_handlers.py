@@ -99,7 +99,7 @@ class TicketHandlers(AiogramHandlerPack):
         await message.answer("Please type you question")
 
     @staticmethod
-    async def query_change_status_new_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot):
+    async def query_change_status_new_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict, bot: Bot):
         await ticket_db_worker.update_ticket_status(callback_data['id'], TicketStatus(int(callback_data['new_status'])))
         ticket = await ticket_db_worker.find_ticket(callback_data['id'])
         if ticket:
@@ -108,7 +108,7 @@ class TicketHandlers(AiogramHandlerPack):
             await query.message.edit_text(ticket_desccription(ticket, additional_text='<b>Status changed.</b>',), reply_markup=kb_action, parse_mode='HTML')
 
     @staticmethod
-    async def query_change_status_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot):
+    async def query_change_status_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict, bot: Bot):
         ticket = await ticket_db_worker.find_ticket(callback_data['id'])
         if ticket:
             kb_statuses = types.InlineKeyboardMarkup()
@@ -127,7 +127,7 @@ class TicketHandlers(AiogramHandlerPack):
             await query.message.edit_text(ticket_desccription(ticket, additional_text='<b>Choose new status for</b>',), reply_markup=kb_statuses, parse_mode='HTML')
 
     @staticmethod
-    async def process_question_reply(message: types.Message, state: FSMContext, ticket_db_worker: TicketDBworker, bot: Bot, ticket_support_config: typing.Dict):
+    async def process_question_reply(message: types.Message, state: FSMContext, ticket_db_worker: TicketDBworker, bot: Bot, plugin_config: typing.Dict):
         ticket = None
         async with state.proxy() as data:
             reply_to_user_msg = await bot.send_message(data['user_id'], "Support answer to you question:\n" + message.text + "\n\nYou can reply to support by replying this message!", reply_to_message_id=data['user_message_id'])
@@ -141,22 +141,22 @@ class TicketHandlers(AiogramHandlerPack):
             await state.finish()
 
     @staticmethod
-    async def process_new_ticket_reply(message: types.Message, state: FSMContext, ticket_db_worker: TicketDBworker, bot: Bot, ticket_support_config: typing.Dict):
+    async def process_new_ticket_reply(message: types.Message, state: FSMContext, ticket_db_worker: TicketDBworker, bot: Bot, plugin_config: typing.Dict):
         ticket = await ticket_db_worker.find_ticket_by_message_reply_id(message.from_user.id, message.reply_to_message.message_id)
         if ticket:
             await ticket_db_worker.add_conversation(message.text, ticket.ticket_id, message.from_user.id, False, message.message_id, message.reply_to_message.message_id)
             await message.reply("Ok I will send this question to support!\nWait for answer, i notify. Thank you")
 
     @staticmethod
-    async def process_question_text(message: types.Message, state: FSMContext, ticket_db_worker: TicketDBworker, bot: Bot, ticket_support_config: typing.Dict):
+    async def process_question_text(message: types.Message, state: FSMContext, ticket_db_worker: TicketDBworker, bot: Bot, plugin_config: typing.Dict):
         await ticket_db_worker.create_ticket(message.from_user.id, message.text, message.message_id)
-        await bot.send_message(ticket_support_config['GROUP_LINK'], message.text)
+        await bot.send_message(plugin_config['GROUP_LINK'], message.text)
         await message.reply("Ok I will send this question to support!\nWait for answer, i notify. Thank you")
         await state.finish()
 
     @staticmethod
-    async def cmd_get_tickets(message: types.Message, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict):
-        show_next_button, tickets = await ticket_db_worker.find_tickets(page=1, per_page=ticket_support_config['ticket_per_page'])
+    async def cmd_get_tickets(message: types.Message, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict):
+        show_next_button, tickets = await ticket_db_worker.find_tickets(page=1, per_page=plugin_config['ticket_per_page'])
         kb = types.InlineKeyboardMarkup()
         for i in tickets:
             kb.add(
@@ -173,7 +173,7 @@ class TicketHandlers(AiogramHandlerPack):
         await message.answer("Ticket list page 1", reply_markup=kb)
 
     @staticmethod
-    async def query_show_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot):
+    async def query_show_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict, bot: Bot):
         ticket = await ticket_db_worker.find_ticket(callback_data['id'])
         if ticket:
             kb_action = generate_ticket_kb(ticket)
@@ -181,7 +181,7 @@ class TicketHandlers(AiogramHandlerPack):
             await query.message.edit_text(ticket_desccription(ticket), reply_markup=kb_action, parse_mode='HTML')
 
     @staticmethod
-    async def query_show_ticket_conversation(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot, state: FSMContext):
+    async def query_show_ticket_conversation(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict, bot: Bot, state: FSMContext):
         ticket = await ticket_db_worker.find_ticket(callback_data['ticket_id'])
         this_conversation = ticket.conversations[int(callback_data['conv_id'])]
         kb_action = types.InlineKeyboardMarkup()
@@ -208,7 +208,7 @@ class TicketHandlers(AiogramHandlerPack):
         await query.message.edit_text(('Ticket id {}\n\nFrom <a href="tg://user?id={}">User</a>\nConversation #️⃣ {} from ' + ('<b>support</b>' if this_conversation.is_from_support else '<b>user</b>') + ' : {}\n\nCreated at: {}\nStatus: {}').format(ticket.ticket_id, ticket.user_id, len(ticket.conversations) - int(callback_data['conv_id']), this_conversation.text, this_conversation.created_at.strftime("%m/%d/%Y, %H:%M:%S"), str(ticket.status.name.lower().title().replace('_', ' '))), reply_markup=kb_action, parse_mode='HTML')
 
     @staticmethod
-    async def query_reply_to_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict, bot: Bot, state: FSMContext):
+    async def query_reply_to_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict, bot: Bot, state: FSMContext):
         ticket = await ticket_db_worker.find_ticket(callback_data['id'])
         await TicketForm.get_reply.set()
         async with state.proxy() as data:
@@ -219,9 +219,9 @@ class TicketHandlers(AiogramHandlerPack):
         await query.message.edit_text("Please type you reply to ticket.\n\nLast conversation: {}".format(ticket.conversations[0].text))
 
     @staticmethod
-    async def query_get_tickets(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, ticket_support_config: typing.Dict):
+    async def query_get_tickets(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict):
         page = int(callback_data['id'])
-        show_next_button, tickets = await ticket_db_worker.find_tickets(page=page, per_page=ticket_support_config['ticket_per_page'])
+        show_next_button, tickets = await ticket_db_worker.find_tickets(page=page, per_page=plugin_config['ticket_per_page'])
         kb = types.InlineKeyboardMarkup()
         for i in tickets:
             kb.add(
@@ -247,7 +247,7 @@ class TicketHandlers(AiogramHandlerPack):
         await query.message.edit_text("Ticket list page {}".format(page), reply_markup=kb)
 
     @staticmethod
-    async def echo(message: types.Message, _plugin_name: typing.Any, ticket_support_config: dict):
+    async def echo(message: types.Message, _plugin_name: typing.Any, plugin_config: dict):
         print(_plugin_name)
-        print(ticket_support_config)
+        print(plugin_config)
         await message.answer(message.text)

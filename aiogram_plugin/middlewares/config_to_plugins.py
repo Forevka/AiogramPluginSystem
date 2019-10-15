@@ -15,7 +15,7 @@ class ConfigForPluginMiddleware(BaseMiddleware):
     def get_config_data(self, plugin_name: str) -> typing.Dict[typing.Any, typing.Any]:
         plugin_full_config: dict = ConfigForPluginMiddleware.pluginConfigs.get(
             plugin_name + '_config', {})
-        return {plugin_name + '_config': plugin_full_config.get('to_handlers', plugin_full_config)}
+        return {'plugin_config': plugin_full_config.get('to_handlers', plugin_full_config)}
 
     async def on_process_message(self, message: types.Message, data: typing.Dict[typing.Any, typing.Any]):
         if data['_plugin_name']:
