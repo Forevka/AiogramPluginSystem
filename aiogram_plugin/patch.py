@@ -25,6 +25,10 @@ def monkey_patch(Dispatcher, Handler):
         :param index: you can reorder handlers
         """
         from aiogram.dispatcher.filters import get_filters_spec
+
+        if filters and not isinstance(filters, (list, tuple, set)):
+            filters = [filters]
+        
         plugin: AiogramPlugin = AiogramPlugin.get_current()
         if plugin:
             if filters:
@@ -34,9 +38,6 @@ def monkey_patch(Dispatcher, Handler):
                 filters = [MarkPluginName(convert_to_snake_case(plugin.name))]
 
         spec = _get_spec(handler)
-
-        if filters and not isinstance(filters, (list, tuple, set)):
-            filters = [filters]
 
         filters = get_filters_spec(self.dispatcher, filters)
 
