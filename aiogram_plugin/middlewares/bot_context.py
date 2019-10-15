@@ -1,6 +1,6 @@
 import typing
 
-from aiogram import Dispatcher, types, Bot
+from aiogram import Dispatcher, types
 from aiogram.dispatcher.middlewares import BaseMiddleware
 
 

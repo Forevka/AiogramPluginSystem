@@ -1,17 +1,13 @@
 import asyncio
 import logging
-import typing
 
 from aiogram import Bot, Dispatcher, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from loguru import logger
-from aiogram_plugins import monkey_patch; monkey_patch(Dispatcher)
+from aiogram.dispatcher.handler import Handler
 
-from middlewares.BotContextMiddleware import BotContextMiddleware
-
-from plugins.ticket_system.ticket_system_plugin import ticket_plugin
-
+from aiogram_plugin import monkey_patch
 from config import config
+from plugins.ticket_system.ticket_system_plugin import ticket_plugin; monkey_patch(Dispatcher, Handler)
 
 
 if __name__ == '__main__':
@@ -24,7 +20,6 @@ if __name__ == '__main__':
     bot = Bot(token=API_TOKEN)
     storage = MemoryStorage()
     dp = Dispatcher(bot, storage=storage)
-    dp.middleware.setup(BotContextMiddleware(dp))
 
     loop.run_until_complete(dp.register_plugin(ticket_plugin))
 

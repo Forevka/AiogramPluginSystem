@@ -7,16 +7,15 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils.callback_data import CallbackData
 from loguru import logger
 
-from aiogram_plugins import AiogramHandlerPack
-import config
+from aiogram_plugin import AiogramHandlerPack
+
 from ..controllers.db_controller import TicketDBworker
 from ..filters.IsReplyToBot import IsReplyToBot
-from ..models.ticket import Ticket
 from ..models.ticket import TicketStatus
+from ..models.ticket import Ticket
 
 
-
-# Stateы
+# State
 class TicketForm(StatesGroup):
     get_text = State()  # Will be represented in storage as 'TicketForm:get_text'
     get_reply = State()
@@ -124,7 +123,7 @@ class TicketHandlers(AiogramHandlerPack):
                 types.InlineKeyboardButton(
                     "⬅️ Back", callback_data=ticket_cb.new(id=ticket.ticket_id, action='show')),
             )
-        
+
             await query.message.edit_text(ticket_desccription(ticket, additional_text='<b>Choose new status for</b>',), reply_markup=kb_statuses, parse_mode='HTML')
 
     @staticmethod
@@ -248,5 +247,7 @@ class TicketHandlers(AiogramHandlerPack):
         await query.message.edit_text("Ticket list page {}".format(page), reply_markup=kb)
 
     @staticmethod
-    async def echo(message: types.Message):
+    async def echo(message: types.Message, _plugin_name: typing.Any, ticket_support_config: dict):
+        print(_plugin_name)
+        print(ticket_support_config)
         await message.answer(message.text)

@@ -1,44 +1,18 @@
-import enum
 from inspect import iscoroutinefunction, isfunction
-import re
 import typing
 
-from aiogram import Dispatcher, types
+from aiogram import Dispatcher
 from aiogram.dispatcher.middlewares import BaseMiddleware
-from aiogram.utils.mixins import DataMixin
+from aiogram.utils.mixins import ContextInstanceMixin, DataMixin
 from loguru import logger
 
-def convert_to_cnake_case(name):
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
-
-class ConfigForPluginMiddleware(BaseMiddleware):
-    pluginConfigs: typing.Dict[str, typing.Dict[typing.Any, typing.Any]] = {}
-
-    def __init__(self):
-        super(ConfigForPluginMiddleware, self).__init__()
-
-    def get_config_data(self) -> typing.Dict[typing.Any, typing.Any]:
-        return {config_name: cfg for config_name, cfg in ConfigForPluginMiddleware.pluginConfigs.items()}
-
-    async def on_pre_process_message(self, message: types.Message, data: typing.Dict[typing.Any, typing.Any]):
-        data.update(self.get_config_data())
-    
-    async def on_pre_process_callback_query(self, callback_query: types.CallbackQuery, data: typing.Dict[typing.Any, typing.Any]):
-        data.update(self.get_config_data())
-
-class AiogramHandlerPack(DataMixin):
-    @staticmethod
-    def register(dp: Dispatcher, config: typing.Dict[typing.Any, typing.Any]) -> bool:
-        raise NotImplemented("Static method register need to be implemented")
-
-class WhenToCall(enum.IntEnum):
-    BEFORE_MIDDLEWARES = AT_START = 1
-    BEFORE_HANDLERS = AFTER_MIDDLEWARES = 2
-    AFTER_HANDLERS = AFTER_ALL = 3
+from .meta_handler_pack import AiogramHandlerPack
+from .middlewares.config_to_plugins import ConfigForPluginMiddleware
+from .middlewares.bot_context import BotContextMiddleware
+from .utils.utils import WhenToCall, convert_to_snake_case
 
 
-class AiogramPlugin:
+class AiogramPlugin(ContextInstanceMixin, DataMixin):
     plugins: typing.List[str] = []
     config: typing.Dict[typing.Any, typing.Any]
     middlewares: typing.List[BaseMiddleware]
@@ -61,15 +35,20 @@ class AiogramPlugin:
             raise AttributeError(f'Plugin {self.name} already exists')
 
         AiogramPlugin.plugins.append(self.name)
-        ConfigForPluginMiddleware.pluginConfigs.update({convert_to_cnake_case(self.name) + "_config": self.config})
+        ConfigForPluginMiddleware.pluginConfigs.update({convert_to_snake_case(self.name) + "_config": self.config})
 
         logger.debug(f'Initialised {self.name} plugin')
 
     async def plug(self, dp: Dispatcher):
+        AiogramPlugin.get_current().data['_plugin_name'] = self.name
         if ConfigForPluginMiddleware not in dp.middleware.applications:
             logger.debug(
                 f'Config middleware not setuped, setuping')
             dp.middleware.setup(ConfigForPluginMiddleware())
+        if BotContextMiddleware not in dp.middleware.applications:
+            logger.debug(
+                f'Bot to context middleware not setuped, setuping')
+            dp.middleware.setup(BotContextMiddleware(dp))
 
         logger.debug(
             f'Start launching custom methods AT START by plugin {self.name}')
@@ -155,10 +134,3 @@ class AiogramPlugin:
         else:
             logger.debug(
                 f'Can`t plugg {repr(method)} to {self.name} need to be callable')
-
-
-def monkey_patch(Dispatcher):
-    async def register_plugin(self, plugin: AiogramPlugin, **kwargs):
-        await plugin.plug(self, **kwargs)
-
-    Dispatcher.register_plugin = register_plugin

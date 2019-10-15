@@ -3,7 +3,7 @@ import typing
 from aiogram import Dispatcher
 from loguru import logger
 
-from aiogram_plugins import AiogramPlugin
+from aiogram_plugin import AiogramPlugin
 from .controllers.db_controller import create_db
 from .handlers.ticket_handlers import TicketHandlers
 from .middlewares.DBmiddleware import AddTicketDBMiddleware
