@@ -62,6 +62,7 @@ echo_plugin.plug_custom_method(hello_at_start, WhenToCall.AT_START)
 
 Now you can attach plugin to your dispatcher instance
 ```
+from aiogram_plugin import monkey_patch; monkey_patch(Dispatcher, Handler)
 from plugins.simple_echo.simple_echo_plugin import echo_plugin
 ...
 loop.run_until_complete(dp.register_plugin(echo_plugin))
