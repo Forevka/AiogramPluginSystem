@@ -13,7 +13,7 @@ and everything setup to dp automatically!
 
 Small example of plugin code:
 
-Importing trivially modules
+Importing trivial modules
 ```
 import typing
 
