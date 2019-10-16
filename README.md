@@ -68,3 +68,4 @@ loop.run_until_complete(dp.register_plugin(echo_plugin))
 ...
 ```
 That`s all!
+All code you can find in plugins/echo_plugin directory
