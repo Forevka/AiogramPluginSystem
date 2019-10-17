@@ -1,4 +1,8 @@
 # AiogramPluginSystem
+[![Updates](https://pyup.io/repos/github/Forevka/AiogramPluginSystem/shield.svg)](https://pyup.io/repos/github/Forevka/AiogramPluginSystem/)
+[![Python 3](https://pyup.io/repos/github/Forevka/AiogramPluginSystem/python-3-shield.svg)](https://pyup.io/repos/github/Forevka/AiogramPluginSystem/)
+
+
 
 It`s repository with plugin system for Aiogram framework
 with this system you can create plugin and attach to him 
