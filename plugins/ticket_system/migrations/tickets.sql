@@ -14,8 +14,8 @@ Date: 2019-10-15 00:08:10
 -- Table structure for tickets
 -- ----------------------------
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-DROP TABLE IF EXISTS "public"."tickets";
-CREATE TABLE "public"."tickets" (
+
+CREATE TABLE IF NOT EXISTS "public"."tickets" (
 "ticket_id" uuid DEFAULT uuid_generate_v4() NOT NULL,
 "user_id" int8 NOT NULL,
 "created_at" timestamp(6) DEFAULT CURRENT_TIMESTAMP,

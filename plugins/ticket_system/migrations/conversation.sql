@@ -15,8 +15,7 @@ Date: 2019-10-15 00:07:36
 -- ----------------------------
 CREATE SEQUENCE IF NOT EXISTS table_conversation_id_seq;
 
-DROP TABLE IF EXISTS "public"."conversation";
-CREATE TABLE "public"."conversation" (
+CREATE TABLE IF NOT EXISTS "public"."conversation" (
 "conversation_id" int4 DEFAULT nextval('table_conversation_id_seq'::regclass) NOT NULL,
 "ticket_id" uuid NOT NULL,
 "text" text COLLATE "default" NOT NULL,
