@@ -8,7 +8,6 @@ from loguru import logger
 
 from .meta_handler_pack import AiogramHandlerPack
 from .middlewares.config_to_plugins import ConfigForPluginMiddleware
-from .middlewares.bot_context import BotContextMiddleware
 from .utils.utils import WhenToCall, convert_to_snake_case
 
 
@@ -20,6 +19,8 @@ class AiogramPlugin(ContextInstanceMixin, DataMixin):
     custom_methods_at_start: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
     custom_methods_before_handlers: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
     custom_methods_after_all: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]
+
+
 
     def __init__(self, name: str, config: typing.Dict[typing.Any, typing.Any] = {}):
         self.name: str = name
@@ -41,14 +42,6 @@ class AiogramPlugin(ContextInstanceMixin, DataMixin):
 
     async def plug(self, dp: Dispatcher):
         AiogramPlugin.get_current().data['_plugin_name'] = self.name
-        if ConfigForPluginMiddleware not in dp.middleware.applications:
-            logger.debug(
-                f'Config middleware not setuped, setuping')
-            dp.middleware.setup(ConfigForPluginMiddleware())
-        if BotContextMiddleware not in dp.middleware.applications:
-            logger.debug(
-                f'Bot to context middleware not setuped, setuping')
-            dp.middleware.setup(BotContextMiddleware(dp))
 
         logger.debug(
             f'Start launching custom methods AT START by plugin {self.name}')
