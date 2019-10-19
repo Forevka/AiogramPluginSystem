@@ -1,4 +1,5 @@
 import typing
+import os
 import uuid
 
 from aiogram.utils.mixins import ContextInstanceMixin
@@ -24,15 +25,15 @@ class TicketDBworker(ContextInstanceMixin):
                                           database=self.database, host=self.host)
         
         if migrate:
-            sql_create_tickets_table = open('plugins/ticket_system/migrations/tickets.sql', 'r').read()
-            sql_create_conversations_table = open('plugins/ticket_system/migrations/conversation.sql', 'r').read()
-            try:
-                res = await self.conn.execute(sql_create_tickets_table)
-                logger.debug('Migrated tickets table with ' + str(res))
-                await self.conn.execute(sql_create_conversations_table)
-                logger.debug('Migrated conversation table with ' + str(res))
-            except Exception as e:
-                logger.error(e)
+            path_to_migrations = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'migrations'))
+            for filename in os.listdir(path_to_migrations):
+                if filename.endswith(".sql"): 
+                    sql_migration = open(os.path.join(path_to_migrations, filename), 'r').read()
+                    try:
+                        res = await self.conn.execute(sql_migration)
+                        logger.debug('Apply sql migration ' + str(filename) + "res: "+str(res))
+                    except Exception as e:
+                        logger.error(e)
 
     async def add_conversation(self, text: str, ticket_id: typing.Union[str, uuid.UUID], from_user_id: int, from_support: bool, message_id: typing.Optional[int], reply_message_id: typing.Optional[int]) -> uuid.UUID:
         sql_query = ("""INSERT INTO conversation (text, ticket_id, from_user_id, from_support, message_id, reply_message_id) 
