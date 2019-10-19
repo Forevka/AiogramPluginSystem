@@ -1,6 +1,6 @@
-import typing
-import os
 import gettext
+import os
+import typing
 
 from aiogram import types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -39,7 +39,7 @@ class LocaleController:
 
     async def download_locale(self) -> typing.List[str]:
         return await store_locales(self.config["poeditor_token"],
-                                    self.config["poeditor_project_id"])
+                                   self.config["poeditor_project_id"])
 
     async def reload_locales(self) -> bool:
         await self.download_locale()
@@ -50,12 +50,11 @@ class LocaleController:
     def get_locale(self, lang: str) -> gettext.gettext:
         return self.locales.get(lang, self.locales['ru'])
 
-
     def generate_keyboard(self) -> InlineKeyboardMarkup:
         markup = InlineKeyboardMarkup()
         for i in list(self.locales.keys()):
             markup.add(InlineKeyboardButton(self.langcodes.get(i)+" "+self.emoji_flags.get(i, ""),
-                                                callback_data = self.opt.new(type = 'lang_choice', value = i)))
+                                            callback_data=self.opt.new(type='lang_choice', value=i)))
         return markup
 
     def get_markup(self) -> InlineKeyboardMarkup:

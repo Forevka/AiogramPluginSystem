@@ -1,10 +1,12 @@
-from plugins.i18n_plugin.controllers.db_controller import I18nDBworker
-from plugins.i18n_plugin.controllers.i18n_controller import LocaleController
 from aiogram import Dispatcher, types
 from aiogram.dispatcher.middlewares import BaseMiddleware
-
 from loguru import logger
+
+from plugins.i18n_plugin.controllers.db_controller import I18nDBworker
+from plugins.i18n_plugin.controllers.i18n_controller import LocaleController
+
 from ..i18n_config import config
+
 
 class GetUserLocale(BaseMiddleware):
     def __init__(self, dp: Dispatcher):
@@ -21,11 +23,11 @@ class GetUserLocale(BaseMiddleware):
             data['_'] = self.i18n_controller.get_locale(user.lang)
         else:
             data['_'] = self.i18n_controller.get_locale(config['default_lang'])
-        
+
         return data
 
     async def on_pre_process_message(self, message: types.Message, data: dict):
         data.update(await self.get_data(message.from_user.id))
-        
+
     async def on_pre_process_callback_query(self, callback_query: types.CallbackQuery, data: dict):
         data.update(await self.get_data(callback_query.from_user.id))

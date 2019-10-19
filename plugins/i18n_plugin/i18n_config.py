@@ -1,6 +1,6 @@
 config = {
-    "poeditor_token": '',
-    "poeditor_project_id": 1,
+    "poeditor_token": '04c5798f4f174791920914a164018d4b',
+    "poeditor_project_id": 287047,
     "emoji_flags": {
         "en":"🇺🇸",
         "ru":"🇷🇺"
@@ -12,9 +12,9 @@ config = {
     "default_lang": 'ru',
     'db_i18n_settings': {
         'user': 'postgres',
-        'password': '',
+        'password': 'werdwerd',
         'database': 'users',
-        'host': '',
+        'host': '194.67.198.163',
         'migrate': False
     },
 }

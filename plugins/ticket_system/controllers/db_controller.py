@@ -1,5 +1,5 @@
-import typing
 import os
+import typing
 import uuid
 
 from aiogram.utils.mixins import ContextInstanceMixin
@@ -23,15 +23,18 @@ class TicketDBworker(ContextInstanceMixin):
     async def connect(self, migrate: bool = False) -> None:
         self.conn = await asyncpg.connect(user=self.user, password=self.password,
                                           database=self.database, host=self.host)
-        
+
         if migrate:
-            path_to_migrations = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'migrations'))
+            path_to_migrations = os.path.abspath(os.path.join(
+                os.path.dirname(__file__), '..', 'migrations'))
             for filename in os.listdir(path_to_migrations):
-                if filename.endswith(".sql"): 
-                    sql_migration = open(os.path.join(path_to_migrations, filename), 'r').read()
+                if filename.endswith(".sql"):
+                    sql_migration = open(os.path.join(
+                        path_to_migrations, filename), 'r').read()
                     try:
                         res = await self.conn.execute(sql_migration)
-                        logger.debug('Apply sql migration ' + str(filename) + "res: "+str(res))
+                        logger.debug('Apply sql migration ' +
+                                     str(filename) + "res: "+str(res))
                     except Exception as e:
                         logger.error(e)
 
@@ -91,5 +94,5 @@ class TicketDBworker(ContextInstanceMixin):
 
 async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'ticket_system', migrate: bool = False) -> TicketDBworker:
     db: TicketDBworker = TicketDBworker(password, host, user, database)
-    await db.connect(migrate = migrate)
+    await db.connect(migrate=migrate)
     return db
