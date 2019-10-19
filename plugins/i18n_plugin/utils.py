@@ -65,3 +65,4 @@ async def store_locales(token, id):
 if __name__ == "__main__":
     from i18n_config import config
     asyncio.run(store_locales(config["poeditor_token"],
+                              config["poeditor_project_id"]))
