@@ -9,8 +9,8 @@ from aiogram_plugin import monkey_patch; monkey_patch(Dispatcher, Handler)
 from config import config
 from plugins.ticket_system.ticket_system_plugin import ticket_plugin;
 #from plugins.simple_echo.simple_echo_plugin import echo_plugin
-#from plugins.broadcasting.broadcasting_plugin import broadcating_plugin
-from plugins.i18n_plugin.i18n_plugin import i18n_plugin
+from plugins.broadcasting.broadcasting_plugin import broadcating_plugin
+#from plugins.i18n_plugin.i18n_plugin import i18n_plugin
 
 
 if __name__ == '__main__':
@@ -25,9 +25,9 @@ if __name__ == '__main__':
     dp = Dispatcher(bot, storage=storage)
 
 
-    loop.run_until_complete(dp.register_plugin(ticket_plugin))
+    #loop.run_until_complete(dp.register_plugin(ticket_plugin))
     #loop.run_until_complete(dp.register_plugin(echo_plugin))
-    #loop.run_until_complete(dp.register_plugin(broadcating_plugin))
-    loop.run_until_complete(dp.register_plugin(i18n_plugin))
+    loop.run_until_complete(dp.register_plugin(broadcating_plugin))
+    #loop.run_until_complete(dp.register_plugin(i18n_plugin))
 
     executor.start_polling(dp, skip_updates=True)

@@ -1,17 +1,20 @@
-from datetime import datetime
+from datetime import datetime, date
 import typing
 
 from aiogram import Dispatcher, types, Bot
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.dispatcher.filters.state import State, StatesGroup
 from loguru import logger
 
 from aiogram_plugin import AiogramHandlerPack
 from ..calendar_keyboard import generate_calendar, calendar_cb
+from aiogram.utils.callback_data import CallbackData
+
+# State
+class CalendarForm(StatesGroup):
+    get_text = State()  
 
 class BroadcastHandlers(AiogramHandlerPack):
-    """
-        you can simple create you own class
-        with your own handlers
-    """
     @staticmethod
     def register(dp: Dispatcher, config: typing.Dict[typing.Any, typing.Any]) -> bool:
         dp.register_message_handler(BroadcastHandlers.cmd_calendar, commands=['calendar'])
@@ -21,6 +24,12 @@ class BroadcastHandlers(AiogramHandlerPack):
         
         dp.register_callback_query_handler(
             BroadcastHandlers.query_day, calendar_cb.filter(action='select_day'))
+
+        dp.register_callback_query_handler(
+            BroadcastHandlers.query_new_event, calendar_cb.filter(action='new_event'))
+        
+        dp.register_message_handler(
+            BroadcastHandlers.process_question_reply, state=CalendarForm.get_text)
 
         return True
     
@@ -37,4 +46,17 @@ class BroadcastHandlers(AiogramHandlerPack):
     
     @staticmethod
     async def query_day(query: types.CallbackQuery, callback_data: dict):
-       pass 
+       events = []
+       logger.info(callback_data)
+       this_date = date(int(callback_data['year']), int(callback_data['month']), int(callback_data['day']))
+       actions_kb = InlineKeyboardMarkup()
+       actions_kb.row(InlineKeyboardButton('Add new event', callback_data=calendar_cb.new(day = callback_data['day'], month=callback_data['month'], year=callback_data['year'], action = "new_event")))
+
+
+       await query.message.edit_text("Events for {}".format(this_date.strftime('%Y-%m-%d')), reply_markup=actions_kb)
+    
+    @staticmethod
+    async def query_new_event(query: types.CallbackQuery, callback_data: dict):
+        await CalendarForm.get_text.set()
+
+        await query.message.answer("Please type text for broadcast him")
