@@ -9,7 +9,7 @@ with this system you can create plugin and attach to him
 all of yours handlers, middlewares, configs and other custom methods
 
 Then simply do 
-```
+```python
 from aiogram_plugin import monkey_patch; monkey_patch(Dispatcher, Handler)
 loop.run_until_complete(dp.register_plugin(echo_plugin))
 ```
@@ -18,7 +18,7 @@ and everything setup to dp automatically!
 Small example of plugin code:
 
 Importing trivial modules
-```
+```python
 import typing
 
 from aiogram import Dispatcher, types
@@ -26,18 +26,18 @@ from loguru import logger
 ```
 
 importing plugin modules
-```
+```python
 from aiogram_plugin import WhenToCall
 from aiogram_plugin import AiogramPlugin, AiogramHandlerPack
 ```
 
 Some configs
-```
+```python
 from .echo_config import config
 ```
 
 And at last defining our plugin and describe handlers for this handlerPack
-```
+```python
 echo_plugin = AiogramPlugin('SimpleEcho', config=config)
 
 def hello_at_start(dp, config: dict):
@@ -65,7 +65,7 @@ echo_plugin.plug_custom_method(hello_at_start, WhenToCall.AT_START)
 ```
 
 Now you can attach plugin to your dispatcher instance
-```
+```python
 from aiogram_plugin import monkey_patch; monkey_patch(Dispatcher, Handler)
 from plugins.simple_echo.simple_echo_plugin import echo_plugin
 ...
