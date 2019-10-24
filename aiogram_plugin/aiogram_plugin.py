@@ -45,14 +45,9 @@ class AiogramPlugin(ContextInstanceMixin, DataMixin):
 
         logger.debug(
             f'Start launching custom methods AT START by plugin {self.name}')
-        for iscoro, method in self.custom_methods_at_start:
-            if iscoro:
-                await method(dp, self.config)
-            else:
-                method(dp, self.config)
+        await self._run_methods(dp, self.custom_methods_at_start)
         logger.debug(
             f'Successfully launched custom methods AT START by plugin {self.name}')
-
 
         logger.debug(
             f'Start setuping middlewares to dispatcher by plugin {self.name}')
@@ -65,14 +60,11 @@ class AiogramPlugin(ContextInstanceMixin, DataMixin):
 
         logger.debug(
             f'Start launching custom methods AT MIDDLE by plugin {self.name}')
-        for iscoro, method in self.custom_methods_before_handlers:
-            if iscoro:
-                await method(dp, self.config)
-            else:
-                method(dp, self.config)
+        await self._run_methods(dp, self.custom_methods_before_handlers)
         logger.debug(
             f'Successfully launched custom methods AT MIDDLE by plugin {self.name}')
-
+        
+        
         logger.debug(
             f'Start registering handlers to dispatcher by plugin {self.name}')
 
@@ -87,13 +79,19 @@ class AiogramPlugin(ContextInstanceMixin, DataMixin):
 
         logger.debug(
             f'Start launching custom methods AT END by plugin {self.name}')
-        for iscoro, method in self.custom_methods_after_all:
+        await self._run_methods(dp, self.custom_methods_after_all)
+        logger.debug(
+            f'Successfully launched custom methods AT END by plugin {self.name}')
+
+    async def _run_methods(self, dp: Dispatcher, method_list: typing.List[typing.Tuple[int, typing.Union[typing.Callable[[Dispatcher, typing.Dict[typing.Any, typing.Any]], typing.Any]]]]) -> bool:
+        for iscoro, method in method_list:
             if iscoro:
                 await method(dp, self.config)
             else:
                 method(dp, self.config)
-        logger.debug(
-            f'Successfully launched custom methods AT END by plugin {self.name}')
+        
+        return True
+
 
     def plug_middleware(self, middleware: BaseMiddleware) -> 'AiogramPlugin':
         self.middlewares.append(middleware)
