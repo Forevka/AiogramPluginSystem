@@ -44,6 +44,31 @@ def generate_ticket_kb(ticket: Ticket,) -> types.InlineKeyboardMarkup:
 
     return kb_action
 
+def generate_ticket_pagination_kb(cur_page: int, tickets: typing.List[Ticket], show_next_button: bool,) -> types.InlineKeyboardMarkup:
+    l = []
+    for i in tickets:
+        kb.add(
+            types.InlineKeyboardButton(
+                "From user: " + str(i.user_id) + " status " + str(i.status.name.lower().title()), callback_data=ticket_cb.new(id=i.ticket_id, action='show')),
+        )
+    
+    if cur_page > 1:
+        l.append(
+            types.InlineKeyboardButton(
+                "⬅️ Show newest", callback_data=ticket_cb.new(id=cur_page - 1, action='next_page')),
+        )
+    
+    if show_next_button:
+        l.append(
+            types.InlineKeyboardButton(
+                "Show older ➡️", callback_data=ticket_cb.new(id=cur_page + 1, action='next_page')),
+        )
+        
+    kb = types.InlineKeyboardMarkup()
+    kb.row(*l)
+    
+    return kb
+    
 
 def ticket_desccription(ticket: Ticket, additional_text: str = '',):
     is_from = (
@@ -157,20 +182,8 @@ class TicketHandlers(AiogramHandlerPack):
     @staticmethod
     async def cmd_get_tickets(message: types.Message, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict):
         show_next_button, tickets = await ticket_db_worker.find_tickets(page=1, per_page=plugin_config['ticket_per_page'])
-        kb = types.InlineKeyboardMarkup()
-        for i in tickets:
-            kb.add(
-                types.InlineKeyboardButton(
-                    "From user: " + str(i.user_id) + " status " + str(i.status.name.lower().title()), callback_data=ticket_cb.new(id=i.ticket_id, action='show')),
-            )
 
-        if show_next_button:
-            kb.add(
-                types.InlineKeyboardButton(
-                    "Show older ➡️", callback_data=ticket_cb.new(id='2', action='next_page')),
-            )
-
-        await message.answer("Ticket list page 1", reply_markup=kb)
+        await message.answer("Ticket list page 1", reply_markup=generate_ticket_pagination_kb(1, tickets, show_next_button))
 
     @staticmethod
     async def query_show_ticket(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict, bot: Bot):
@@ -222,29 +235,8 @@ class TicketHandlers(AiogramHandlerPack):
     async def query_get_tickets(query: types.CallbackQuery, callback_data: dict, ticket_db_worker: TicketDBworker, plugin_config: typing.Dict):
         page = int(callback_data['id'])
         show_next_button, tickets = await ticket_db_worker.find_tickets(page=page, per_page=plugin_config['ticket_per_page'])
-        kb = types.InlineKeyboardMarkup()
-        for i in tickets:
-            kb.add(
-                types.InlineKeyboardButton(
-                    "From user: " + str(i.user_id) + " status " + str(i.status.name.lower().title()), callback_data=ticket_cb.new(id=i.ticket_id, action='show')),
-            )
 
-        l = []
-        if page > 1:
-            l.append(
-                types.InlineKeyboardButton(
-                    "⬅️ Show newest", callback_data=ticket_cb.new(id=page - 1, action='next_page')),
-            )
-
-        if show_next_button:
-            l.append(
-                types.InlineKeyboardButton(
-                    "Show older ➡️", callback_data=ticket_cb.new(id=page + 1, action='next_page')),
-            )
-
-        kb.row(*l)
-
-        await query.message.edit_text("Ticket list page {}".format(page), reply_markup=kb)
+        await query.message.edit_text("Ticket list page {}".format(page), reply_markup=generate_ticket_pagination_kb(page, tickets, show_next_button))
 
     @staticmethod
     async def echo(message: types.Message, _plugin_name: typing.Any, plugin_config: dict):
