@@ -46,6 +46,7 @@ def generate_ticket_kb(ticket: Ticket,) -> types.InlineKeyboardMarkup:
 
 def generate_ticket_pagination_kb(cur_page: int, tickets: typing.List[Ticket], show_next_button: bool,) -> types.InlineKeyboardMarkup:
     l = []
+    kb = types.InlineKeyboardMarkup()
     for i in tickets:
         kb.add(
             types.InlineKeyboardButton(
@@ -64,7 +65,6 @@ def generate_ticket_pagination_kb(cur_page: int, tickets: typing.List[Ticket], s
                 "Show older ➡️", callback_data=ticket_cb.new(id=cur_page + 1, action='next_page')),
         )
         
-    kb = types.InlineKeyboardMarkup()
     kb.row(*l)
     
     return kb

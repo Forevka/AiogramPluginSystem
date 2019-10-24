@@ -28,8 +28,8 @@ class BroadcastHandlers(AiogramHandlerPack):
         dp.register_callback_query_handler(
             BroadcastHandlers.query_new_event, calendar_cb.filter(action='new_event'))
         
-        dp.register_message_handler(
-            BroadcastHandlers.process_question_reply, state=CalendarForm.get_text)
+        #dp.register_message_handler(
+        #    BroadcastHandlers.process_question_reply, state=CalendarForm.get_text)
 
         return True
     
