@@ -51,10 +51,9 @@ def monkey_patch(Dispatcher, Handler):
         plugin: AiogramPlugin = AiogramPlugin.get_current()
         if plugin:
             if filters:
-                filters.append(MarkPluginName(
-                    convert_to_snake_case(plugin.name)))
+                filters.append(MarkPluginName(plugin.name))
             else:
-                filters = [MarkPluginName(convert_to_snake_case(plugin.name))]
+                filters = [MarkPluginName(plugin.name)]
 
         spec = _get_spec(handler)
 

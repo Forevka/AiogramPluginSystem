@@ -36,7 +36,7 @@ class AiogramPlugin(ContextInstanceMixin, DataMixin):
             raise AttributeError(f'Plugin {self.name} already exists')
 
         AiogramPlugin.plugins.append(self.name)
-        ConfigForPluginMiddleware.pluginConfigs.update({convert_to_snake_case(self.name) + "_config": self.config})
+        ConfigForPluginMiddleware.pluginConfigs.update({self.name + "_config": self.config})
 
         logger.debug(f'Initialised {self.name} plugin')
 
