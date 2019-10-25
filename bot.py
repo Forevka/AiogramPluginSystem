@@ -25,7 +25,7 @@ if __name__ == '__main__':
     dp = Dispatcher(bot, storage=storage)
 
 
-    loop.run_until_complete(dp.register_plugin(ticket_plugin))
+    #loop.run_until_complete(dp.register_plugin(ticket_plugin))
     #loop.run_until_complete(dp.register_plugin(echo_plugin))
     loop.run_until_complete(dp.register_plugin(broadcating_plugin))
     #loop.run_until_complete(dp.register_plugin(i18n_plugin))

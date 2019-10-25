@@ -1,6 +1,6 @@
 import typing
 import uuid
-import datetime
+from datetime import datetime, timedelta, date
 
 from aiogram.utils.mixins import ContextInstanceMixin
 
@@ -11,7 +11,7 @@ from ..models.event import Event
 from uuid import UUID
 
 
-class BroadcstingDBworker(ContextInstanceMixin):
+class BroadcastingDBworker(ContextInstanceMixin):
     conn: asyncpg.Connection
 
     def __init__(self, password: str, host: str, user: str = 'postgres', database: str = 'broadcsting',):
@@ -25,15 +25,7 @@ class BroadcstingDBworker(ContextInstanceMixin):
                                           database=self.database, host=self.host)
         
         if migrate:
-            sql_create_tickets_table = open('plugins/ticket_system/migrations/tickets.sql', 'r').read()
-            sql_create_conversations_table = open('plugins/ticket_system/migrations/conversation.sql', 'r').read()
-            try:
-                res = await self.conn.execute(sql_create_tickets_table)
-                logger.debug('Migrated tickets table with ' + str(res))
-                await self.conn.execute(sql_create_conversations_table)
-                logger.debug('Migrated conversation table with ' + str(res))
-            except Exception as e:
-                logger.error(e)
+            pass
 
     async def create_event(self, when_execute: datetime, text: str, created_by: int) -> UUID:
         sql_query = ("""INSERT INTO events (when_execute, text, created_by) 
@@ -44,8 +36,8 @@ class BroadcstingDBworker(ContextInstanceMixin):
         return event_id
     
     async def find_event_for_day(self, year: int, month: int, day: int):
-        start_date: str = datetime.date(year, month, day).strftime('YYYY-mm-dd')
-        end_date: str = (datetime.date(year, month, day) + datetime.timedelta(days=1)).strftime('YYYY-mm-dd')
+        start_date: str = date(year, month, day).strftime('YYYY-mm-dd')
+        end_date: str = (date(year, month, day) + timedelta(days=1)).strftime('YYYY-mm-dd')
         print(start_date, end_date)
         sql_query = (
             "SELECT * FROM events WHERE when_execute >= $1 AND when_execute < $2", start_date, end_date)
@@ -63,7 +55,7 @@ class BroadcstingDBworker(ContextInstanceMixin):
             return Event(**raw_event)
 
 
-async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'broadcsting', migrate: bool = False) -> BroadcstingDBworker:
-    db: BroadcstingDBworker = BroadcstingDBworker(password, host, user, database)
+async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'broadcsting', migrate: bool = False) -> BroadcastingDBworker:
+    db: BroadcastingDBworker = BroadcastingDBworker(password, host, user, database)
     await db.connect(migrate = migrate)
     return db
