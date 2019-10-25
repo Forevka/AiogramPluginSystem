@@ -27,6 +27,9 @@ class TicketDBworker(ContextInstanceMixin):
         if migrate:
             path_to_migrations = os.path.abspath(os.path.join(
                 os.path.dirname(__file__), '..', 'migrations'))
+            if os.path.exists(path_to_migrations):
+                logger.error('Migrations directory doesnt exist')
+                return
             for filename in os.listdir(path_to_migrations):
                 if filename.endswith(".sql"):
                     sql_migration = open(os.path.join(
@@ -34,7 +37,7 @@ class TicketDBworker(ContextInstanceMixin):
                     try:
                         res = await self.conn.execute(sql_migration)
                         logger.debug('Apply sql migration ' +
-                                     str(filename) + "res: "+str(res))
+                                    str(filename) + "res: "+str(res))
                     except Exception as e:
                         logger.error(e)
 

@@ -26,6 +26,9 @@ class I18nDBworker(ContextInstanceMixin):
         if migrate:
             path_to_migrations = os.path.abspath(os.path.join(
                 os.path.dirname(__file__), '..', 'migrations'))
+            if os.path.exists(path_to_migrations):
+                logger.error('Migrations directory doesnt exist')
+                return
             for filename in os.listdir(path_to_migrations):
                 if filename.endswith(".sql"):
                     sql_migration = open(os.path.join(
