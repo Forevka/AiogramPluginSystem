@@ -40,7 +40,7 @@ def generate_time_kb(year: int, month: int, day: int, line_num = 4) -> InlineKey
     line = []
     for t in range(0, line_num, 1):
         column = []
-        for tt in range(t * int(24 / line_num) + 1, t * int(24 / line_num) + int(24 / line_num) + 1, 1):
+        for tt in range(t * int(24 / line_num), t * int(24 / line_num) + int(24 / line_num), 1):
             column.append(InlineKeyboardButton(f"{tt:02d}:00", callback_data=calendar_cb.new(time = tt, day = day, month = month, year = year, action = "select_time")))
         line.append(column)
         

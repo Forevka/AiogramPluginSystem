@@ -29,7 +29,7 @@ class BroadcastHandlers(AiogramHandlerPack):
             BroadcastHandlers.cmd_calendar, commands=['calendar'])
 
         dp.register_callback_query_handler(
-            BroadcastHandlers.query_change_calendar, calendar_cb.filter(action='change'))
+            BroadcastHandlers.query_change_calendar, calendar_cb.filter(action='change'), state='*')
 
         dp.register_callback_query_handler(
             BroadcastHandlers.query_day, calendar_cb.filter(action='select_day'))
@@ -51,6 +51,18 @@ class BroadcastHandlers(AiogramHandlerPack):
 
         dp.register_callback_query_handler(
             BroadcastHandlers.query_edit_text_event, event_cb.filter(action='edit'))
+        
+        # reschedule
+        dp.register_callback_query_handler(
+            BroadcastHandlers.query_reschedule_event, event_cb.filter(action='reschedule'))
+        
+        dp.register_callback_query_handler(
+            BroadcastHandlers.query_reschedule_day, calendar_cb.filter(action='select_day'), state='*')
+        
+        dp.register_callback_query_handler(
+            BroadcastHandlers.query_reschedule_time, calendar_cb.filter(action='select_time'), state='*')
+
+        # end
 
         dp.register_message_handler(
             BroadcastHandlers.process_question_reply, state=CalendarForm.get_text)
@@ -146,6 +158,34 @@ class BroadcastHandlers(AiogramHandlerPack):
         await query.message.edit_text(f"Choose day from keyboard\nYear: {callback_data['year']}\nMonth: {callback_data['month']}", reply_markup=calendar_kb)
 
     @staticmethod
+    async def query_reschedule_event(query: types.CallbackQuery, callback_data: dict, broadcast_db_worker: BroadcastingDBworker, state: FSMContext,):
+        print(callback_data)
+        await CalendarForm.edit_event_time.set()
+        async with state.proxy() as data:
+            data['event_id'] = callback_data['event_id']
+        
+        now: datetime = datetime.now()
+        events = await broadcast_db_worker.find_events_for_month(datetime(int(now.year), 
+                                                                            int(now.month), 
+                                                                            int(now.day)))
+        calendar_kb = generate_calendar(now.year, now.month, events)
+        await query.message.edit_text(f'Choose the day on which you want to transfer the event\nYear: {now.year}\nMonth: {now.month}', reply_markup=calendar_kb)
+
+    @staticmethod
+    async def query_reschedule_day(query: types.CallbackQuery, callback_data: dict, broadcast_db_worker: BroadcastingDBworker):
+        logger.info(callback_data)
+        kb = generate_time_kb(int(callback_data['year']), 
+                                int(callback_data['month']), 
+                                int(callback_data['day']),)
+        kb.row(InlineKeyboardButton('Cancel', callback_data=calendar_cb.new(
+                                                                            time='00', 
+                                                                            day=callback_data['day'], 
+                                                                            month=callback_data['month'], 
+                                                                            year=callback_data['year'], 
+                                                                            action="select_day")))
+        await query.message.edit_text("Choose the time for which you want to REschedule this event", reply_markup=kb)
+
+    @staticmethod
     async def query_day(query: types.CallbackQuery, callback_data: dict, broadcast_db_worker: BroadcastingDBworker):
         logger.info(callback_data)
         this_date = date(int(callback_data['year']), 
@@ -187,6 +227,20 @@ class BroadcastHandlers(AiogramHandlerPack):
 
         await query.message.edit_text("Pick time", reply_markup=kb)
     
+    @staticmethod
+    async def query_reschedule_time(query: types.CallbackQuery, callback_data: dict, state: FSMContext, broadcast_db_worker: BroadcastingDBworker):
+        async with state.proxy() as data:
+            new_date = datetime(int(callback_data['year']), 
+                                int(callback_data['month']), 
+                                int(callback_data['day']),
+                                int(callback_data['time']))
+            event = await broadcast_db_worker.update_execute_time_in_event(data['event_id'], new_date, query.from_user.id)
+            actions_kb = generate_event_kb(data['event_id'], event.when_execute)
+            await query.message.edit_text("*Event rescheduled*\n\n"+"Event for {}\nWith text: {}".format(event.when_execute.strftime('%Y-%m-%d %H:%M'), event.text), reply_markup=actions_kb)
+        
+        await state.finish()
+
+
     @staticmethod
     async def query_time(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
         await CalendarForm.get_text.set()

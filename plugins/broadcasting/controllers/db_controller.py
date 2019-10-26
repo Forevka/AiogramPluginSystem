@@ -81,6 +81,13 @@ class BroadcastingDBworker(ContextInstanceMixin):
         if raw_event:
             return Event(**raw_event)
     
+    async def update_execute_time_in_event(self, event_id: UUID, new_time: datetime, updated_by: int) -> typing.Optional[Event]:
+        sql_query = (
+            "UPDATE events SET when_execute = $2, edited_by = $3, edited_datetime = $4 WHERE event_id = $1 RETURNING *", str(event_id), new_time, updated_by, datetime.now())
+        raw_event = await self.conn.fetchrow(*sql_query)
+        if raw_event:
+            return Event(**raw_event)
+    
     async def delete_event_by_id(self, event_id: UUID) -> bool:
         sql_query = (
             "DELETE FROM events WHERE event_id = $1 RETURNING *", str(event_id))
