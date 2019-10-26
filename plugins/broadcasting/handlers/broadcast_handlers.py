@@ -1,18 +1,20 @@
 from datetime import date, datetime
-from plugins.broadcasting.controllers.db_controller import BroadcastingDBworker
 import typing
+from uuid import UUID
 
 from aiogram import Bot, Dispatcher, types
-from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.callback_data import CallbackData
 from loguru import logger
 
 from aiogram_plugin import AiogramHandlerPack
-from uuid import UUID
+from plugins.broadcasting.controllers.db_controller import BroadcastingDBworker
 
-from ..calendar_keyboard import calendar_cb, event_cb, generate_calendar, generate_time_kb, generate_event_kb
+from ..calendar_keyboard import (
+    calendar_cb, event_cb, generate_calendar, generate_event_kb,
+    generate_time_kb)
 from ..models.event import Event
 
 # State
@@ -159,7 +161,6 @@ class BroadcastHandlers(AiogramHandlerPack):
 
     @staticmethod
     async def query_reschedule_event(query: types.CallbackQuery, callback_data: dict, broadcast_db_worker: BroadcastingDBworker, state: FSMContext,):
-        print(callback_data)
         await CalendarForm.edit_event_time.set()
         async with state.proxy() as data:
             data['event_id'] = callback_data['event_id']
@@ -177,8 +178,7 @@ class BroadcastHandlers(AiogramHandlerPack):
         kb = generate_time_kb(int(callback_data['year']), 
                                 int(callback_data['month']), 
                                 int(callback_data['day']),)
-        kb.row(InlineKeyboardButton('Cancel', callback_data=calendar_cb.new(
-                                                                            time='00', 
+        kb.row(InlineKeyboardButton('Cancel', callback_data=calendar_cb.new(time='00', 
                                                                             day=callback_data['day'], 
                                                                             month=callback_data['month'], 
                                                                             year=callback_data['year'], 
@@ -187,7 +187,6 @@ class BroadcastHandlers(AiogramHandlerPack):
 
     @staticmethod
     async def query_day(query: types.CallbackQuery, callback_data: dict, broadcast_db_worker: BroadcastingDBworker):
-        logger.info(callback_data)
         this_date = date(int(callback_data['year']), 
                             int(callback_data['month']), 
                             int(callback_data['day']))

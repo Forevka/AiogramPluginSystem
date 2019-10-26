@@ -95,6 +95,14 @@ class BroadcastingDBworker(ContextInstanceMixin):
         if raw_event:
             return True
         return False
+    
+    async def get_latest_events(self,) -> typing.List[Event]:
+        sql_query = (
+            "SELECT * from events WHERE when_execute<=CURRENT_TIMESTAMP + interval '1 hour' AND status = 1 ORDER BY when_execute ASC",)
+        raw_events = await self.conn.fetch(*sql_query)
+        if raw_events:
+            return [Event(**i) for i in raw_events]
+        return []
 
 
 async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'broadcsting', migrate: bool = False) -> BroadcastingDBworker:
