@@ -73,7 +73,9 @@ class TicketDBworker(ContextInstanceMixin):
         sql_query = ("SELECT * FROM tickets ORDER BY created_at DESC LIMIT $1 OFFSET $2",
                      per_page + 1, (page-1) * per_page)
         tickets = await self.conn.fetch(*sql_query)
-        return (len(tickets) == (per_page + 1), [Ticket(**i) for i in tickets[:per_page]])
+        if tickets:
+            return (len(tickets) == (per_page + 1), [Ticket(**i) for i in tickets[:per_page]])
+        return (False, [])
 
     async def find_ticket(self, ticket_id: typing.Union[str, uuid.UUID]) -> typing.Optional[Ticket]:
         sql_query = ("SELECT * FROM tickets WHERE ticket_id = $1",

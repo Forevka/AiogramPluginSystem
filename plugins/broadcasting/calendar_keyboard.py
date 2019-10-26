@@ -1,4 +1,5 @@
 import calendar
+import typing
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
 from aiogram.utils.callback_data import CallbackData
@@ -10,23 +11,27 @@ from datetime import datetime
 calendar_cb = CallbackData('day_cb', 'time', 'day', 'month', 'year', 'action')
 event_cb = CallbackData('br_event_cb', 'event_id', 'action')
 
-def generate_calendar(year: int, month: int) -> InlineKeyboardMarkup:
+def check_for_exist(day: int, event_list: typing.List[int]) -> str:
+    return (str(day) if day!=0 else '⚪️') + ("📃" if day in event_list else "")
+    
+
+def generate_calendar(year: int, month: int, event_list: typing.List[int]) -> InlineKeyboardMarkup:
     if month < 1 or month > 12:
         return []
     markup = InlineKeyboardMarkup()
     
     for week in calendar.monthcalendar(year, month):
-        markup.row(*[InlineKeyboardButton(day if day!=0 else '⚪️', callback_data=calendar_cb.new(time = '00', day = day, month=month, year=year, action = "select_day")) for day in week])
+        markup.row(*[InlineKeyboardButton(check_for_exist(day, event_list), callback_data=calendar_cb.new(time = '0', day = day, month=month, year=year, action = "select_day")) for day in week])
     
     l = []
     if month == 1:
-        l.append(InlineKeyboardButton("Back", callback_data=calendar_cb.new(time = '00', day = 0, month = 12, year = year - 1, action = "change")))
+        l.append(InlineKeyboardButton("Back", callback_data=calendar_cb.new(time = '0', day = 1, month = 12, year = year - 1, action = "change")))
     else:
-        l.append(InlineKeyboardButton("Back", callback_data=calendar_cb.new(time = '00', day = 0, month = month - 1, year = year, action = "change")))
+        l.append(InlineKeyboardButton("Back", callback_data=calendar_cb.new(time = '0', day = 1, month = month - 1, year = year, action = "change")))
     if month == 12:
-        l.append(InlineKeyboardButton("Next", callback_data=calendar_cb.new(time = '00', day = 0, month = 1, year = year+1, action = "change")))
+        l.append(InlineKeyboardButton("Next", callback_data=calendar_cb.new(time = '0', day = 1, month = 1, year = year+1, action = "change")))
     else:
-        l.append(InlineKeyboardButton("Next", callback_data=calendar_cb.new(time = '00', day = 0, month = month + 1, year = year, action = "change")))
+        l.append(InlineKeyboardButton("Next", callback_data=calendar_cb.new(time = '0', day = 1, month = month + 1, year = year, action = "change")))
     markup.row(*l)
     return markup
 
@@ -49,12 +54,13 @@ def generate_event_kb(event_id: UUID, this_date: datetime) -> InlineKeyboardMark
     markup = InlineKeyboardMarkup()
     
     markup.row(
-        InlineKeyboardButton("Edit", callback_data=event_cb.new(event_id = str(event_id), action = "edit")),
+        InlineKeyboardButton("Edit text", callback_data=event_cb.new(event_id = str(event_id), action = "edit")),
         InlineKeyboardButton("Delete", callback_data=event_cb.new(event_id = str(event_id), action = "delete")),
         InlineKeyboardButton("Reschedule", callback_data=event_cb.new(event_id = str(event_id), action = "reschedule")),
     )
 
     markup.row(
+        InlineKeyboardButton("To event day", callback_data=calendar_cb.new(time = '00', day = this_date.day, month = this_date.month, year = this_date.year, action = "select_day")),
         InlineKeyboardButton("To calendar", callback_data=calendar_cb.new(time = '00', day = this_date.day, month = this_date.month, year = this_date.year, action = "change")),
     )
 
