@@ -1,5 +1,5 @@
 aiogram==2.3
-loguru==0.2.5
+loguru==0.3.2
 aiohttp==3.5.4
 aio_pika==6.1.1
 asyncpg==0.18.1
