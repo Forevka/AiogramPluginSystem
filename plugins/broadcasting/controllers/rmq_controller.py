@@ -4,6 +4,7 @@ import asyncio
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.bot import api
 from aiogram.utils.payload import generate_payload, prepare_arg, prepare_attachment, prepare_file
+from uuid import UUID
 
 import aio_pika
 import config
@@ -31,9 +32,9 @@ class RabbitMQ:
         self.channel = await self.connection.channel()
         
     
-    async def create_queue(self, event_id: str):
+    async def create_queue(self, event_id: UUID):
         self.queue = await self.channel.declare_queue(
-            event_id, auto_delete=False
+            str(event_id), auto_delete=False
         )
     
     async def message_to_queue(self, event_id, method = 'sendMessage', data: dict = {}, files = {}, **kwargs):
