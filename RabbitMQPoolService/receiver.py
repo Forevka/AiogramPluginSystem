@@ -64,13 +64,17 @@ async def start(loop, my_id, event_id, connection_string, token,):
                         f"[{my_id}] - Worker received at {now} - {message.body}")
 
                     body = json.loads(message.body)
+                    if body['data'].get('end', False):
+                        logger.debug(
+                            f"[{my_id}] - Worker received END stopping.")
+                        exit()
                     files = body.get('files')
                     if files:
                         files = {file["attach"]: types.InputFile(
                             file["file_name"]) for file in files}
 
                     await bot.request(body['method'],
-                                    data=body.get('data'),
+                                    data=body['data'],
                                     files=files)
                     logger.debug(
                         f"[{my_id}] - Worker sent at {datetime.now()} time spend {datetime.now() - now}")

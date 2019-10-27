@@ -13,6 +13,7 @@ class EventMonitor:
         self.db: BroadcastingDBworker = db
         self.rmq: RabbitMQ = rmq
         self.bot_token = bot_token
+        self.worker_count = 5
         self.user_list = (383492784, 383492784,
                           383492784, 383492784, 383492784)
 
@@ -23,7 +24,7 @@ class EventMonitor:
             logger.info('Found events')
             for event in events:
                 await self.rmq.create_queue(event.event_id)
-                status = await self.start_new_pool(event.event_id)
+                status = await self.start_new_pool(event.event_id, worker_count=self.worker_count)
                 if status == 200:
                     msgs = [
                             self.rmq.message_to_queue(data={
@@ -31,7 +32,15 @@ class EventMonitor:
                                 'text': event.text
                             }, event_id = str(event.event_id)) for user_id in self.user_list
                         ]
-
+                    # appending 5 stop msg for every worker
+                    msgs.append(
+                        *[
+                            self.rmq.message_to_queue(data={
+                                    'end': True
+                                }, event_id = str(event.event_id)) for i in range(self.worker_count)
+                        ]
+                    )
+                    # noqa
                     asyncio.gather(*msgs)
                 elif status == 404:
                     logger.warning("RabbitMQ Worker service doesnt work")
