@@ -82,12 +82,3 @@ def start_consumer(my_id, event_id, connection_string, token,):
         start(loop, my_id, event_id, connection_string, token,)
     )
     loop.close()
-    
-
-if __name__ == '__main__':
-    wp = WorkerPool(
-        token='631844699:AAENUxQKbXeXMq1IVPKGuqL9JSPdWvRiJ90', 
-        connection_string='amqp://test:werdwerd2012@194.67.198.163', 
-        event_id='e42a62f3-6e17-4edd-b9be-5d0f6544e110'
-    )
-    print(wp.up_workers())
