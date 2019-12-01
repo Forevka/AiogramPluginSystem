@@ -1,4 +1,5 @@
 from datetime import datetime
+import typing
 import asyncio
 from uuid import UUID
 import aiohttp
@@ -9,10 +10,12 @@ from .rmq_controller import RabbitMQ
 
 
 class EventMonitor:
-    def __init__(self, db: BroadcastingDBworker, rmq: RabbitMQ, bot_token: str):
+    def __init__(self, db: BroadcastingDBworker, rmq: RabbitMQ, bot_token: str, rmq_workers_url: str, sleep_time: int,):
         self.db: BroadcastingDBworker = db
         self.rmq: RabbitMQ = rmq
         self.bot_token = bot_token
+        self.rmq_workers_url = rmq_workers_url
+        self.sleep_time = sleep_time
         self.worker_count = 5
         self.user_list = (383492784, 383492784,
                           383492784, 383492784, 383492784)
@@ -26,15 +29,15 @@ class EventMonitor:
                 await self.rmq.create_queue(event.event_id)
                 status = await self.start_new_pool(event.event_id, worker_count=self.worker_count)
                 if status == 200:
-                    msgs = [
+                    msgs: typing.List = [
                             self.rmq.message_to_queue(data={
                                 'chat_id': user_id,
                                 'text': event.text
                             }, event_id = str(event.event_id)) for user_id in self.user_list
                         ]
                     # appending 5 stop msg for every worker
-                    msgs.append(
-                        *[
+                    msgs.extend(
+                        [
                             self.rmq.message_to_queue(data={
                                     'end': True
                                 }, event_id = str(event.event_id)) for i in range(self.worker_count)
@@ -47,7 +50,7 @@ class EventMonitor:
                 else:
                     logger.warning("Smth went wrong")
         
-
+        await asyncio.sleep(self.sleep_time, await self.check_events())
                 
     
     async def _fetch(self, url, method, data={}):
@@ -66,12 +69,12 @@ class EventMonitor:
             "worker_count": worker_count
         }
 
-        return await self._fetch(f'http://localhost:9999/pool/{event_id}', 'post', data = data)
+        return await self._fetch(f'{self.rmq_workers_url}/pool/{event_id}', 'post', data = data)
 
 
                 
 
 
 def create_event_monitor(db: BroadcastingDBworker, rmq: RabbitMQ, config: dict):
-    monitor = EventMonitor(db, rmq, config['bot_token'])
+    monitor = EventMonitor(db, rmq, config['bot_token'], config['rmq_workers_url'], config['sleep_time'])
     return monitor
