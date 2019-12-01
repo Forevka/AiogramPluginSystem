@@ -104,6 +104,12 @@ class BroadcastingDBworker(ContextInstanceMixin):
             return [Event(**i) for i in raw_events]
         return []
 
+    async def update_event_status_by_id(self, event_id: UUID, new_status: int, updated_by: int) -> typing.Optional[Event]:
+        sql_query = (
+            "UPDATE events SET status = $2, edited_by = $3, edited_datetime = $4 WHERE event_id = $1 RETURNING *", str(event_id), new_status, updated_by, datetime.now())
+        raw_event = await self.conn.fetchrow(*sql_query)
+        if raw_event:
+            return Event(**raw_event)
 
 async def create_db(password: str, host: str, user: str = 'postgres', database: str = 'broadcsting', migrate: bool = False) -> BroadcastingDBworker:
     db: BroadcastingDBworker = BroadcastingDBworker(password, host, user, database)

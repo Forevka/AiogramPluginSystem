@@ -5,17 +5,17 @@ from uuid import UUID
 import aiohttp
 from loguru import logger
 
+
 from .db_controller import BroadcastingDBworker
 from .rmq_controller import RabbitMQ
 
 
 class EventMonitor:
-    def __init__(self, db: BroadcastingDBworker, rmq: RabbitMQ, bot_token: str, rmq_workers_url: str, sleep_time: int,):
+    def __init__(self, db: BroadcastingDBworker, rmq: RabbitMQ, bot_token: str, rmq_workers_url: str,):
         self.db: BroadcastingDBworker = db
         self.rmq: RabbitMQ = rmq
         self.bot_token = bot_token
         self.rmq_workers_url = rmq_workers_url
-        self.sleep_time = sleep_time
         self.worker_count = 5
         self.user_list = (383492784, 383492784,
                           383492784, 383492784, 383492784)
@@ -45,12 +45,13 @@ class EventMonitor:
                     )
                     # noqa
                     asyncio.gather(*msgs)
+                    await self.db.update_event_status_by_id(event.event_id, 2, -1)
                 elif status == 404:
                     logger.warning("RabbitMQ Worker service doesnt work")
                 else:
                     logger.warning("Smth went wrong")
         
-        await asyncio.sleep(self.sleep_time, await self.check_events())
+        #await asyncio.sleep(self.sleep_time, self.check_events())
                 
     
     async def _fetch(self, url, method, data={}):
@@ -76,5 +77,5 @@ class EventMonitor:
 
 
 def create_event_monitor(db: BroadcastingDBworker, rmq: RabbitMQ, config: dict):
-    monitor = EventMonitor(db, rmq, config['bot_token'], config['rmq_workers_url'], config['sleep_time'])
+    monitor = EventMonitor(db, rmq, config['bot_token'], config['rmq_workers_url'])
     return monitor

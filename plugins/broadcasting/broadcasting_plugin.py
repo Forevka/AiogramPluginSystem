@@ -16,6 +16,10 @@ from .controllers.db_controller import create_db
 from .controllers.rmq_controller import RabbitMQ
 from .controllers.monitor_controller import create_event_monitor
 from .broadcast_system_config import config
+from datetime import datetime
+import os
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 async def connect_to_db(dp: Dispatcher, config: typing.Dict[typing.Any, typing.Any] = {}):
     logger.info(config)
@@ -23,7 +27,11 @@ async def connect_to_db(dp: Dispatcher, config: typing.Dict[typing.Any, typing.A
     rmq = RabbitMQ(**config['rmq_settings'])
     await rmq.connect()
     dp['event_monitor'] = create_event_monitor(dp['broadcast_db_worker'], rmq, config)
-    await dp['event_monitor'].check_events()
+
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(dp['event_monitor'].check_events, 'interval', seconds=config['sleep_time'])
+    scheduler.start()
+
 
 broadcating_plugin = AiogramPlugin('Broadcasting', config = config)
 broadcating_plugin.plug_handler(BroadcastHandlers)
