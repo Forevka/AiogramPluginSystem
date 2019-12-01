@@ -20,7 +20,7 @@ async def start_pool(request):
     if event_id:
         payload = await request.json()
         if payload:
-            wp = WorkerPool(event_id, token=payload['token'], connection_string=payload['connection_string'])
+            wp: WorkerPool = WorkerPool(event_id, token=payload['token'], connection_string=payload['connection_string'])
             wp.up_workers()
             return web.json_response({"event_id": event_id})
     return web.Response(status=401)

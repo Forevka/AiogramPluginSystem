@@ -18,9 +18,9 @@ class ConfigForPluginMiddleware(BaseMiddleware):
         return {'plugin_config': plugin_full_config.get('to_handlers', plugin_full_config)}
 
     async def on_process_message(self, message: types.Message, data: typing.Dict[typing.Any, typing.Any]):
-        if data['_plugin_name']:
+        if data.get('_plugin_name'):
             data.update(self.get_config_data(data['_plugin_name']))
 
     async def on_process_callback_query(self, callback_query: types.CallbackQuery, data: typing.Dict[typing.Any, typing.Any]):
-        if data['_plugin_name']:
+        if data.get('_plugin_name'):
             data.update(self.get_config_data(data['_plugin_name']))
