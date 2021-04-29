@@ -1,0 +1,22 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: aiogram
+    versions:
+    - 2.11.2
+    - "2.12"
+    - 2.12.1
+  - dependency-name: aiohttp
+    versions:
+    - 3.7.3
+  - dependency-name: aio-pika
+    versions:
+    - 6.7.1
+  - dependency-name: asyncpg
+    versions:
+    - 0.21.0
